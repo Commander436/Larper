@@ -34,12 +34,14 @@ Run the focused messaging tests with `node --test js/messaging.test.js`, focused
 
 The feed and calendar use a Cloudflare Worker and D1. Neither is shared or writable until Cloudflare resources and identity are configured:
 
-1. Create a Cloudflare D1 database, replace `database_id` in `wrangler.toml` with its real ID, and apply both migrations: `npx wrangler d1 migrations apply larper-community --remote`.
+1. The production `FEED_DB` binding uses the D1 database `yo` and its configured production ID. Apply both migrations to it with `npx wrangler d1 migrations apply yo --remote`.
 2. Protect the site and Worker API with Cloudflare Access. Configure the Worker `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` bindings and set `FEED_AUTH_MODE` to `cloudflare-access`. The Access JWT must include each user's stable `sub`; calendar writes also require a valid `email` claim.
 3. Configure a Resend account with a verified sending domain. Set the Worker secret with `npx wrangler secret put RESEND_API_KEY`, and set the non-secret `REMINDER_FROM_EMAIL` Worker variable to a sender address on that verified domain. Do not put credentials in `wrangler.toml` or source control.
 4. The Worker declares an hourly Cron Trigger. Deploy the Worker and assets to enable it; reminders will not be sent until D1, Access, the Resend API key, and sender address are configured.
 
 The current secure boundary rejects calendar reads and writes unless `FEED_AUTH_MODE=cloudflare-access` and a valid RS256 `CF-Access-Jwt-Assertion` is verified against the configured team domain and audience. Calendar data is never returned in public feed responses, and the local profile role and name are never accepted as authenticated identity. Reminder delivery is recorded by event and reminder type, and Resend receives a stable idempotency key so scheduled retries do not duplicate successful sends.
+
+Preview deployments intentionally have no D1 binding until a separate Preview database ID is configured; the production database is never exposed to Preview. Feed and comment reads return HTTP 503 while Preview has no database, and calendar writes remain disabled unless Preview authentication is configured.
 
 The existing profile is a local preview, not a real account. Calendar data is not saved in that browser preview; it appears only when the page is served behind configured Access and the Worker/D1 are available. No email will be sent until the deployment prerequisites above are complete.
 

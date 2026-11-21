@@ -8,19 +8,14 @@ binding = "ASSETS"
 
 [[d1_databases]]
 binding = "FEED_DB"
-database_name = "larper-community"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_name = "yo"
+database_id = "5660b6f0-ad07-4fd5-b22d-38799d3d9357"
 
 [vars]
 FEED_AUTH_MODE = "disabled"
 
 [previews.vars]
 FEED_AUTH_MODE = "disabled"
-
-[[previews.d1_databases]]
-binding = "FEED_DB"
-database_name = "larper-community-preview"
-database_id = "5660b6f0-ad07-4fd5-b22d-38799d3d9357"
 
 [triggers]
 crons = ["0 * * * *"]

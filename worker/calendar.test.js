@@ -167,6 +167,17 @@ async function apiRequest(path, token, method = "GET", body) {
   }), environment(apiRequest.db));
 }
 
+test("community reads return a clear service error without D1", async () => {
+  apiRequest.db = null;
+  const feed = await apiRequest("/api/feed");
+  assert.equal(feed.status, 503);
+  assert.deepEqual(await feed.json(), { error: "Community storage is not configured." });
+
+  const comments = await apiRequest("/api/posts/post-1/comments");
+  assert.equal(comments.status, 503);
+  assert.deepEqual(await comments.json(), { error: "Community storage is not configured." });
+});
+
 test("calendar CRUD is owner-scoped and ignores client-supplied user IDs", async () => {
   const db = new FakeD1();
   apiRequest.db = db;
