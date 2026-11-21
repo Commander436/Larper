@@ -44,8 +44,19 @@
       <section class="card" aria-live="polite">
         <div id="pane-role">
           <span class="eyebrow">A community for learning</span>
-          <h2>Find your place here</h2>
-          <p class="sub">Choose a role to preview the profile setup. This does not create an account.</p>
+          <h2>Welcome back</h2>
+          <p class="sub">Sign in with the username and password you created for your account.</p>
+          <form id="login-form" class="stack" novalidate>
+            <label class="sr-only" for="login-username">Username</label>
+            <input class="field" id="login-username" type="text" placeholder="Username" autocomplete="username" maxlength="32" required>
+            <label class="sr-only" for="login-password">Password</label>
+            <input class="field" id="login-password" type="password" placeholder="Password" autocomplete="current-password" maxlength="128" required>
+            <div class="form-error" id="login-error" role="alert"></div>
+            <button class="btn btn-primary btn-block" id="login-submit" type="submit">Sign in</button>
+          </form>
+          <button class="btn btn-ghost btn-block" id="secure-sign-in" type="button" disabled>Secure sign-in unavailable</button>
+          <p class="auth-notice" id="auth-notice" role="status" aria-live="polite">Checking secure sign-in availability…</p>
+          <p class="sub">New here? Choose a role to create an account:</p>
           <div class="role-cards">
             <button class="role" type="button" data-role="mentor">
               <span class="ico" aria-hidden="true">👩‍🏫</span>
@@ -56,20 +67,26 @@
               <span><b>I'm a mentee</b><span class="d">I want to learn tech skills and find a mentor.</span></span>
             </button>
           </div>
-          <p class="auth-notice" id="auth-notice">Secure sign-in is not connected yet. We won't ask for or accept passwords until a real account service is ready.</p>
         </div>
 
         <div id="pane-form" class="hidden">
           <button class="back-link" type="button" id="back-to-role">← Back</button>
-          <h2>Set up your preview</h2>
+          <h2>Create your account</h2>
           <p class="sub" id="form-sub"></p>
           <form id="auth-form" class="stack" novalidate>
             <label class="sr-only" for="display-name">Name shown on your profile</label>
             <input class="field" id="display-name" type="text" placeholder="Name shown on your profile" autocomplete="name" maxlength="40" required>
+            <label class="sr-only" for="auth-username">Username</label>
+            <input class="field" id="auth-username" type="text" placeholder="Username (3–32 letters, numbers, . _ -)" autocomplete="username" minlength="3" maxlength="32" required>
+            <label class="sr-only" for="auth-password">Password</label>
+            <input class="field" id="auth-password" type="password" placeholder="Password (12+ characters)" autocomplete="new-password" minlength="12" maxlength="128" required>
+            <label class="sr-only" for="auth-password-confirm">Confirm password</label>
+            <input class="field" id="auth-password-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" minlength="12" maxlength="128" required>
             <div class="form-error" id="auth-error" role="alert"></div>
-            <button class="btn btn-primary btn-block" type="submit">Continue to profile setup</button>
+            <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Create account and continue</button>
           </form>
-          <p class="fineprint">Preview only. Your profile stays in this browser tab and is cleared when it closes. Don't add private contact or address details.</p>
+          <button class="btn btn-ghost btn-block" id="continue-preview" type="button">Continue without an account</button>
+          <p class="fineprint">Passwords are stored as salted PBKDF2 hashes in the app database, never in browser storage. Profile details remain in this browser and are not synced across devices.</p>
         </div>
       </section>
     </main>

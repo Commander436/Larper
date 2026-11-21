@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tech for Women – Community</title>
+  <title>Tech for Women – For You</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="feed-page">
@@ -16,7 +16,7 @@
         <button type="submit" aria-label="Search">Search</button>
       </form>
       <nav aria-label="Main navigation">
-        <a class="active" href="feed.html" aria-current="page">Home</a>
+        <a class="active" href="feed.html" aria-current="page">For You</a>
         <a href="profile.html">Profile</a>
       </nav>
     </div>
@@ -50,7 +50,14 @@
       </div>
     </aside>
 
-    <section class="feed-main" aria-label="Community posts">
+    <section class="feed-main" aria-labelledby="feed-heading">
+      <div class="feed-heading">
+        <div>
+          <span class="section-kicker">Mentor publications</span>
+          <h1 id="feed-heading">For You</h1>
+          <p>Discover advice and ideas shared by mentors in the community.</p>
+        </div>
+      </div>
       <div class="feed-toolbar">
         <div class="feed-tabs" role="tablist" aria-label="Feed mode">
           <button type="button" role="tab" aria-selected="true" data-mode="for-you">For You</button>
@@ -94,6 +101,6 @@
   </dialog>
 
   <script src="js/streak.js"></script>
-  <script src="js/feed.js"></script>
+  <script type="module" src="js/feed.js"></script>
 </body>
 </html>
