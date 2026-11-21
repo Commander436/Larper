@@ -1,4 +1,6 @@
-# Larper – Tech for Women
+# Tech for Women
+
+By Darris Koikkara and Nithis Nagappan
 
 Website for **Tech for Women**, a nonprofit bringing tech education to underserved students across the Valley through free workshops and classes. The site makes it easier for mentors and mentees to connect online (calls, chat) or in person, with community posts and private calendar reminders.
 
