@@ -74,7 +74,7 @@ async function verifyCloudflareAccess(request, env) {
       "RSASSA-PKCS1-v1_5",
       key,
       base64UrlDecode(parts[2]),
-      encoder.encode(`${parts[0}.${parts[1]}`),
+      encoder.encode(`${parts[0]}.${parts[1]}`),
     );
     if (!verified) return null;
     if (payload.exp && Date.now() / 1000 > payload.exp) return null;
