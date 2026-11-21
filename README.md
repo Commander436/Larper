@@ -24,3 +24,23 @@ No build step. Open `index.html` in a browser, or run `python3 -m http.server` a
 - Profile photos are resized to a 512px square in the browser before saving to the current tab's session storage.
 - Word minimums, topic limits, photo rules, etc. are in `CONFIG` at the top of `js/onboarding.js`. Topics live in `js/topics.js`.
 - Text fields reject links, emails and phone numbers, since contact details shouldn't appear in public text.
+
+## Community feed
+
+`feed.html` provides a personalized, searchable community feed with For You / Following views, mentor advice and mentee question posts, comments and replies, and up/down voting. It uses the existing session profile for interest-based ranking only.
+
+The shared feed is implemented with a Cloudflare Worker and D1. It is **not shared or writable until Cloudflare resources and identity are configured**:
+
+1. Create a D1 database and replace `database_id` in `wrangler.toml` with the real ID.
+2. Apply `migrations/0001_community_feed.sql` to that database.
+3. Protect the Worker/site with a real identity provider, preferably Cloudflare Access.
+4. Set `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD`, and change `FEED_AUTH_MODE` from `disabled` to `cloudflare-access` in Worker bindings.
+5. Deploy the Worker and assets. Do not commit credentials or binding secrets.
+
+The current secure boundary rejects post, comment, reply, and vote writes unless `FEED_AUTH_MODE=cloudflare-access` and a valid RS256 `CF-Access-Jwt-Assertion` is verified against the configured team domain and audience. The local profile role and name are never accepted as authenticated identity. Public feed reads remain available, and the UI clearly marks the feed read-only when authentication is absent.
+
+Run focused feed utility tests with:
+
+```sh
+npm test
+```

@@ -186,6 +186,78 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .empty-label { color: var(--muted); font-size: .78rem; white-space: nowrap; }
 .preview-note { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 26px; }
 
+/* ---------- Community feed ---------- */
+.feed-page { background: var(--bg); }
+.feed-top .inner { max-width: 1180px; margin: 0 auto; }
+.feed-nav { display: grid; grid-template-columns: 220px minmax(260px, 620px) auto; align-items: center; gap: 28px; }
+.feed-nav nav { display: flex; justify-content: flex-end; gap: 18px; }
+.feed-nav nav a { color: var(--muted); text-decoration: none; font-weight: 700; font-size: .92rem; }
+.feed-nav nav a.active, .feed-nav nav a:hover { color: var(--primary); }
+.feed-search { display: grid; grid-template-columns: 1fr auto; background: var(--field); border: 1px solid transparent; border-radius: 999px; padding: 5px; }
+.feed-search:focus-within { border-color: var(--primary); background: #fff; }
+.feed-search input { min-width: 0; border: 0; background: transparent; outline: none; padding: 10px 14px; color: var(--text); font-family: inherit; }
+.feed-search button { border: 0; border-radius: 999px; background: var(--primary); color: #fff; padding: 9px 16px; font-weight: 700; }
+.feed-wrap { max-width: 1180px; margin: 30px auto 70px; padding: 0 28px; display: grid; grid-template-columns: 220px minmax(0, 760px); justify-content: center; gap: 24px; }
+.feed-sidebar { align-self: start; }
+.feed-profile-card, .feed-interests { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.feed-profile-card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.feed-profile-card .feed-avatar { width: 48px; height: 48px; font-size: 1.2rem; box-shadow: none; border: 0; flex: none; background-size: cover; }
+.feed-profile-card strong, .feed-profile-card span { display: block; }
+.feed-profile-card strong { color: var(--ink); }
+.feed-profile-card div > span { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+.feed-interests h2 { font-size: .95rem; margin: 0 0 12px; color: var(--ink); }
+.feed-main { min-width: 0; }
+.feed-toolbar { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px; margin-bottom: 14px; }
+.feed-tabs { display: flex; gap: 4px; }
+.feed-tabs button { border: 0; background: transparent; color: var(--muted); padding: 10px 16px; border-radius: 999px; font-weight: 750; }
+.feed-tabs button[aria-selected="true"] { background: var(--tint); color: var(--primary-dark); }
+.feed-create { padding: 11px 18px; font-size: .78rem; }
+.auth-status { background: #fff8f1; border: 1px solid #efd1bb; color: #675a50; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; font-size: .9rem; }
+.feed-results { display: grid; gap: 12px; }
+.feed-loading, .feed-empty { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; color: var(--muted); text-align: center; }
+.feed-empty h2 { color: var(--ink); margin: 0 0 8px; }
+.post-card { display: grid; grid-template-columns: 58px minmax(0, 1fr); background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.post-card:hover { border-color: #dbcbbb; box-shadow: 0 8px 24px rgba(34, 53, 89, .06); }
+.vote-column { background: #faf7f4; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 12px 8px; gap: 5px; }
+.vote-button { width: 34px; height: 34px; border: 0; background: transparent; color: var(--muted); border-radius: 8px; font-size: .75rem; }
+.vote-button:hover { background: var(--tint); color: var(--primary); }
+.vote-score { color: var(--ink); font-size: .95rem; }
+.post-content { padding: 18px 20px 14px; min-width: 0; }
+.post-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: .78rem; }
+.post-type { border-radius: 999px; background: #e7edf5; color: var(--accent); padding: 5px 9px; font-weight: 750; }
+.post-type.question { background: var(--tint); color: var(--primary-dark); }
+.post-content h2 { color: var(--ink); margin: 12px 0 7px; font-size: 1.25rem; line-height: 1.25; }
+.post-body { color: var(--text); line-height: 1.55; margin: 0; white-space: pre-wrap; }
+.post-topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.post-topics span { background: var(--field); color: var(--accent); border-radius: 999px; padding: 5px 9px; font-size: .75rem; font-weight: 650; }
+.post-actions { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 8px; }
+.comment-toggle { border: 0; background: transparent; color: var(--muted); padding: 8px 0; font-weight: 650; }
+.comment-toggle:hover { color: var(--primary); }
+.comments { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 12px; }
+.comment { padding: 8px 10px; background: #faf7f4; border-radius: 10px; margin-bottom: 8px; }
+.comment strong { color: var(--ink); font-size: .82rem; }
+.comment p { margin: 4px 0 0; line-height: 1.45; }
+.comment-reply { margin-left: 18px; border-left: 3px solid var(--primary-soft); }
+.reply-toggle { border: 0; background: transparent; color: var(--primary); padding: 7px 0 0; font-size: .78rem; font-weight: 700; }
+.comment-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+.comment-form .field { padding: 10px 12px; border-radius: 999px; }
+.comment-form .btn { padding: 10px 16px; }
+.post-dialog { width: min(620px, calc(100vw - 32px)); border: 0; border-radius: var(--radius-lg); padding: 0; color: var(--text); box-shadow: 0 24px 70px rgba(34, 53, 89, .25); }
+.post-dialog::backdrop { background: rgba(34, 53, 89, .38); }
+.post-dialog form { display: grid; gap: 10px; padding: 28px; }
+.post-dialog label { color: var(--ink); font-size: .88rem; font-weight: 700; }
+.post-dialog h2 { margin: 4px 0 0; color: var(--ink); }
+.post-dialog textarea.field { min-height: 130px; }
+.dialog-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.dialog-heading .section-kicker { margin: 0; }
+.dialog-close { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--field); color: var(--muted); font-size: 1.4rem; }
+.post-types { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.post-types label { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; cursor: pointer; }
+.post-types input { accent-color: var(--primary); }
+.field-hint { color: var(--muted); font-weight: 500; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.dialog-actions .btn { padding: 12px 20px; font-size: .78rem; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .landing::before { width: 100%; height: 200px; inset: 0 0 auto 0; }
@@ -201,6 +273,10 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
   .profile-wrap { margin-top: 28px; padding: 0 20px; }
   .profile-grid { grid-template-columns: 1fr; }
   .profile-about { grid-row: auto; }
+  .feed-nav { grid-template-columns: 1fr auto; }
+  .feed-search { grid-column: 1 / -1; grid-row: 2; }
+  .feed-nav nav { grid-column: 2; grid-row: 1; }
+  .feed-wrap { grid-template-columns: 170px minmax(0, 1fr); padding: 0 20px; }
 }
 
 @media (max-width: 560px) {
@@ -215,4 +291,17 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
   .profile-card { padding: 22px; }
   .profile-messages { grid-template-columns: auto 1fr; }
   .empty-label { grid-column: 2; }
+  .feed-nav { gap: 12px; }
+  .feed-nav nav { gap: 10px; }
+  .feed-nav nav a { font-size: .82rem; }
+  .feed-wrap { grid-template-columns: 1fr; margin-top: 18px; padding: 0 12px; }
+  .feed-sidebar { display: none; }
+  .feed-toolbar { align-items: stretch; }
+  .feed-tabs button { padding: 9px 10px; }
+  .feed-create { padding: 10px 12px; }
+  .post-card { grid-template-columns: 48px minmax(0, 1fr); }
+  .post-content { padding: 14px 14px 12px; }
+  .post-content h2 { font-size: 1.08rem; }
+  .post-types { grid-template-columns: 1fr; }
+  .post-dialog form { padding: 20px; }
 }
