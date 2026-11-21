@@ -6,8 +6,7 @@ Website for **Tech for Women**, a nonprofit bringing tech education to underserv
 
 ## Run it
 
-No build step. Open `index.html` in a browser, or run `python3 -m http.server` and visit http://localhost:8000.
-Run the focused messaging tests with `node --test js/messaging.test.js`, focused streak tests with `node --test js/streak.test.js`, and the configured worker/streak suite with `npm test`.
+Click Here -> [https://larper.darris-dk.workers.dev/]
 
 ## Notes
 
