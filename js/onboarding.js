@@ -1,9 +1,8 @@
 /*
  * Onboarding flow, driven by the role chosen on the landing page.
- *   Mentor: topics -> title -> lessons -> about you -> location -> phone -> photo -> profile
- *   Mentee: interests -> photo -> profile
- * Progress is saved in localStorage ("tfw_profile") so refreshing doesn't lose work.
- * There is no backend yet: swap `saveProfile` for an API call later.
+ *   Mentor: topics -> title -> lessons -> about you -> lesson format -> photo -> profile
+ *   Mentee: interests -> about you -> photo -> profile
+ * Preview progress is saved in sessionStorage and cleared when the tab closes.
  */
 (function () {
   // ---------- Config ----------
@@ -19,40 +18,57 @@
   };
 
   const FLOWS = {
-    mentor: ["topics", "title", "lessons", "about", "location", "phone", "photo"],
-    mentee: ["topics", "photo"],
+    mentor: ["topics", "title", "lessons", "about", "location", "photo"],
+    mentee: ["topics", "learnerAbout", "photo"],
   };
-
-  const COUNTRIES = [
-    ["US", "🇺🇸", "+1", 10], ["CA", "🇨🇦", "+1", 10], ["MX", "🇲🇽", "+52", 10],
-    ["GB", "🇬🇧", "+44", 10], ["IN", "🇮🇳", "+91", 10], ["PH", "🇵🇭", "+63", 10],
-  ];
 
   // ---------- State ----------
   const blank = {
-    role: "", step: 0, topics: [], title: "", lessons: "", about: "", photo: "",
-    location: { house: false, travel: false, online: false, address: "", city: "", zip: "", miles: "" },
-    phone: { country: "US", number: "" },
+    name: "", role: "", step: 0, topics: [], title: "", lessons: "", about: "", photo: "",
+    location: { publicPlace: false, travel: false, online: false, miles: "" },
     complete: false,
   };
 
   function load() {
     try {
-      const saved = JSON.parse(localStorage.getItem("tfw_profile") || "null");
-      return saved ? Object.assign({}, blank, saved, {
-        location: Object.assign({}, blank.location, saved.location),
-        phone: Object.assign({}, blank.phone, saved.phone),
-      }) : structuredClone(blank);
+      const saved = JSON.parse(sessionStorage.getItem("tfw_profile") || "null");
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) return structuredClone(blank);
+      const location = saved.location && typeof saved.location === "object" ? saved.location : {};
+      return {
+        name: typeof saved.name === "string" ? saved.name : "",
+        role: saved.role === "mentor" || saved.role === "mentee" ? saved.role : "",
+        step: Number.isInteger(saved.step) && saved.step >= 0 ? saved.step : 0,
+        topics: Array.isArray(saved.topics) ? saved.topics.filter((topic) => typeof topic === "string").slice(0, 6) : [],
+        title: typeof saved.title === "string" ? saved.title : "",
+        lessons: typeof saved.lessons === "string" ? saved.lessons : "",
+        about: typeof saved.about === "string" ? saved.about : "",
+        photo: typeof saved.photo === "string" && /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(saved.photo) ? saved.photo : "",
+        location: {
+          publicPlace: location.publicPlace === true,
+          travel: location.travel === true,
+          online: location.online === true,
+          miles: typeof location.miles === "string" || typeof location.miles === "number" ? String(location.miles) : "",
+        },
+        complete: saved.complete === true,
+      };
     } catch (e) { return structuredClone(blank); }
   }
   function save() {
-    try { localStorage.setItem("tfw_profile", JSON.stringify(state)); } catch (e) { /* ignore */ }
+    try {
+      sessionStorage.setItem("tfw_profile", JSON.stringify(state));
+    } catch (e) {
+      window.alert("Your browser couldn't save this preview. Check storage settings or remove the photo and try again.");
+    }
   }
 
-  // Must be signed in (see auth.js)
+  // Preview data is not an authenticated account.
   try {
-    if (!localStorage.getItem("tfw_session")) { window.location.replace("index.html"); return; }
-  } catch (e) { /* storage blocked: allow preview */ }
+    const session = JSON.parse(sessionStorage.getItem("tfw_session") || "null");
+    if (!session || session.preview !== true) { window.location.replace("index.html"); return; }
+  } catch (e) {
+    window.location.replace("index.html");
+    return;
+  }
 
   const state = load();
   if (state.complete) { window.location.replace("profile.html"); return; }
@@ -117,11 +133,13 @@
       <p>This is one of the first things students will read about you, so double-check your spelling and grammar.</p>
       <div class="tip-label">☕ Remember</div>
       <p>Don't include contact information or links in this section.</p>` },
-    location: { html: `<p>Your address is never shown on the site. It's only shared with students you've agreed to teach.</p>
-      <ul><li><b>At your house:</b> host lessons at the address you give</li>
-      <li><b>You can travel:</b> set the farthest you'd go to meet a student</li>
-      <li><b>Online:</b> teach anyone, anywhere, by video call</li></ul>` },
-    phone: { html: `<p>Please add your mobile number. We'll text you as soon as you get a lesson request.</p>` },
+    learnerAbout: { html: `<p>Share what brings you to Tech for Women and what you'd like to learn.</p>
+      <p>Keep it friendly and avoid contact information or links. Your learning interests are shown separately on your profile.</p>` },
+    location: { html: `<p>Choose the lesson format that works for you.</p>
+      <ul><li><b>Public place:</b> meet somewhere open and comfortable</li>
+      <li><b>You can travel:</b> set a general distance, not an address</li>
+      <li><b>Online:</b> teach by video call</li></ul>
+      <p>Keep home addresses and private contact details out of this preview.</p>` },
   };
 
   function renderTip(key) {
@@ -240,70 +258,35 @@
   // ---------- Step 5: location ----------
   function renderLocation() {
     const L = state.location;
-    const mk = (key, label, extra) => {
-      const row = h("button", {
+    const option = (key, label) => h("button", {
         class: "opt" + (L[key] ? " selected" : ""), type: "button", "aria-pressed": L[key] ? "true" : "false",
         onclick: () => { L[key] = !L[key]; save(); renderLocation(); },
       }, label, h("span", { class: "box", html: ICONS.check }));
-      const box = extra ? h("div", { class: "opt-extra" + (L[key] ? " open" : "") }, extra) : null;
-      return [row, box];
-    };
-    const bind = (id, prop, ph, type) => h("input", {
-      class: "field", id, type: type || "text", placeholder: ph, value: L[prop] || "",
-      oninput: (e) => { L[prop] = e.target.value; save(); recompute(); },
+    const miles = h("input", {
+      class: "field", id: "miles", type: "number", min: "1", max: "500",
+      placeholder: "Maximum distance in miles", value: L.miles || "",
+      oninput: (e) => { L.miles = e.target.value; save(); setNextEnabled(locationValid()); },
     });
-
-    const houseExtra = [
-      h("label", { for: "addr" }, "Street address"), bind("addr", "address", "123 Main St", "text"),
-      h("label", { for: "city" }, "City"), bind("city", "city", "Phoenix"),
-      h("label", { for: "zip" }, "ZIP code"), bind("zip", "zip", "85001"),
-    ];
-    const travelExtra = [
-      h("label", { for: "miles" }, "Maximum distance you can travel (miles)"),
-      bind("miles", "miles", "e.g. 15", "number"),
-    ];
-
-    const [r1, b1] = mk("house", "At your house", houseExtra);
-    const [r2, b2] = mk("travel", "You can travel", travelExtra);
-    const [r3] = mk("online", "Online");
+    const travelDetails = h("div", { class: "opt-extra" + (L.travel ? " open" : "") },
+      h("label", { for: "miles" }, "Maximum travel distance in miles"),
+      miles);
 
     stepEl.replaceChildren(
-      h("h1", {}, h("em", {}, "Location"), " of your lessons"),
-      h("h2", { class: "q" }, "Where will the lesson take place?"),
-      h("div", { class: "options" }, r1, b1, r2, b2, r3),
+      h("h1", {}, "Lesson ", h("em", {}, "format")),
+      h("h2", { class: "q" }, "How would you like to meet?"),
+      h("div", { class: "options" },
+        option("publicPlace", "At a public meeting place"),
+        option("travel", "I can travel"),
+        travelDetails,
+        option("online", "Online")),
       nav(locationValid(), goNext)
     );
-    function recompute() { setNextEnabled(locationValid()); }
   }
   function locationValid() {
     const L = state.location;
-    if (!(L.house || L.travel || L.online)) return false;
-    if (L.house && !(L.address.trim() && L.city.trim() && /^\d{5}(-\d{4})?$/.test(L.zip.trim()))) return false;
-    if (L.travel && !(Number(L.miles) > 0)) return false;
+    if (!(L.publicPlace || L.travel || L.online)) return false;
+    if (L.travel && !(Number(L.miles) > 0 && Number(L.miles) <= 500)) return false;
     return true;
-  }
-
-  // ---------- Step 6: phone ----------
-  function phoneDigits() { return state.phone.number.replace(/\D/g, ""); }
-  function phoneValid() {
-    const c = COUNTRIES.find((x) => x[0] === state.phone.country);
-    return phoneDigits().length === c[3];
-  }
-  function renderPhone() {
-    const select = h("select", { "aria-label": "Country code", onchange: (e) => { state.phone.country = e.target.value; save(); setNextEnabled(phoneValid()); } },
-      COUNTRIES.map(([code, flag, dial]) => h("option", { value: code, selected: code === state.phone.country }, `${flag} ${dial}`)));
-    const input = h("input", {
-      type: "tel", id: "phone", inputmode: "tel", autocomplete: "tel-national", placeholder: "Mobile number",
-      value: state.phone.number,
-      oninput: (e) => { state.phone.number = e.target.value; save(); setNextEnabled(phoneValid()); },
-    });
-    stepEl.replaceChildren(
-      h("h1", {}, h("em", {}, "Telephone"), " number"),
-      h("p", { class: "label-muted" }, "Your telephone number"),
-      h("p", { class: "label-sub" }, "Your number never appears on the site. It's only sent to the students you accept to teach."),
-      h("div", { class: "phone" }, select, input),
-      nav(phoneValid(), goNext)
-    );
   }
 
 
@@ -365,8 +348,8 @@
     else if (key === "title") renderText({ key: "title", title: h("span", {}, h("em", {}, "Title"), " of your ad"), min: CONFIG.minTitleWords, rows: 4 });
     else if (key === "lessons") renderText({ key: "lessons", title: h("span", {}, "About ", h("em", {}, "your lessons")), min: CONFIG.minLessonWords, rows: 9 });
     else if (key === "about") renderText({ key: "about", title: h("span", {}, "About ", h("em", {}, "you")), min: CONFIG.minAboutWords, rows: 9 });
+    else if (key === "learnerAbout") renderText({ key: "about", title: h("span", {}, "A little ", h("em", {}, "about you")), min: 15, rows: 5, placeholder: "What brings you here, and what are you excited to learn?" });
     else if (key === "location") renderLocation();
-    else if (key === "phone") renderPhone();
     else if (key === "photo") renderPhoto();
   }
 

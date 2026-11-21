@@ -4,63 +4,61 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tech for Women – Your profile</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-  <div class="ob-top"><div class="inner"><a class="logo" href="index.html">Tech for Women</a></div></div>
+<body class="profile-page">
+  <header class="ob-top">
+    <div class="inner profile-nav">
+      <a class="logo" href="profile.html">Tech for Women</a>
+      <nav aria-label="Profile navigation">
+        <a href="#profile">Profile</a>
+        <a href="#messages">Messages</a>
+        <button id="sign-out" type="button">Exit preview</button>
+      </nav>
+    </div>
+  </header>
 
-  <main class="profile-wrap">
-    <div class="avatar" id="avatar" role="img" aria-label="Your profile photo"></div>
-    <span class="badge" id="role-badge"></span>
-    <h1>You're all set! 🎉</h1>
-    <p>Your profile page is coming soon. Here's what you've told us so far:</p>
-    <dl class="summary" id="summary"></dl>
-    <p style="margin-top:28px"><button class="btn btn-ghost" id="restart" type="button">Edit my answers</button></p>
+  <main class="profile-wrap" id="profile">
+    <div class="profile-hero">
+      <div class="avatar" id="avatar" role="img" aria-label="Your profile photo">👤</div>
+      <div class="profile-intro">
+        <span class="badge" id="role-badge"></span>
+        <h1 id="profile-name"></h1>
+        <p id="profile-subtitle"></p>
+        <button class="btn btn-ghost" id="edit-profile" type="button">Edit profile</button>
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <section class="profile-card profile-about" aria-labelledby="about-heading">
+        <h2 id="about-heading">About</h2>
+        <p id="about-text"></p>
+        <div class="profile-topics">
+          <h3 id="topics-heading"></h3>
+          <div class="topic-tags" id="topic-tags"></div>
+        </div>
+      </section>
+
+      <section class="profile-card profile-ad" id="ad-card" aria-labelledby="ad-heading">
+        <div class="section-kicker">Your teaching ad</div>
+        <h2 id="ad-heading"></h2>
+        <p id="ad-lessons"></p>
+        <div class="profile-meta" id="lesson-formats"></div>
+      </section>
+
+      <section class="profile-card profile-messages" id="messages" aria-labelledby="messages-heading">
+        <div class="messages-icon" aria-hidden="true">✉</div>
+        <div>
+          <div class="section-kicker">Your inbox</div>
+          <h2 id="messages-heading">Messages</h2>
+          <p>Messages will appear here when secure accounts and messaging are connected.</p>
+        </div>
+        <span class="empty-label">No messages yet</span>
+      </section>
+    </div>
+    <p class="preview-note">Local preview only — this is not a real account and cannot receive messages.</p>
   </main>
 
-  <script>
-    // Placeholder profile page. Replace with the real profile once designed.
-    (function () {
-      var p = null;
-      try {
-        if (!localStorage.getItem("tfw_session")) { location.replace("index.html"); return; }
-        p = JSON.parse(localStorage.getItem("tfw_profile") || "null");
-      } catch (e) {}
-      if (!p || !p.complete) { location.replace("onboarding.html"); return; }
-
-      var mentor = p.role !== "mentee";
-      document.getElementById("role-badge").textContent = mentor ? "Mentor" : "Mentee";
-      var av = document.getElementById("avatar");
-      if (p.photo && /^data:image\/(jpeg|png|webp);base64,/.test(p.photo)) av.style.backgroundImage = "url(" + p.photo + ")";
-      else av.textContent = "👤";
-
-      var subjects = (p.topics || []).map(function (t) { return t.split(" › ").pop(); }).join(", ");
-      var rows;
-      if (mentor) {
-        var L = p.location || {};
-        var where = [];
-        if (L.house) where.push("At my house (" + [L.city, L.zip].filter(Boolean).join(" ") + ")");
-        if (L.travel) where.push("Can travel up to " + L.miles + " miles");
-        if (L.online) where.push("Online");
-        rows = [["Subjects", subjects], ["Ad title", p.title], ["About my lessons", p.lessons], ["About me", p.about], ["Lesson location", where.join("\n")]];
-      } else {
-        rows = [["Interested in", subjects]];
-      }
-      var dl = document.getElementById("summary");
-      rows.forEach(function (r) {
-        var dt = document.createElement("dt"); dt.textContent = r[0];
-        var dd = document.createElement("dd"); dd.textContent = r[1]; // textContent: user input stays inert
-        dl.append(dt, dd);
-      });
-
-      document.getElementById("restart").addEventListener("click", function () {
-        p.complete = false; p.step = 0;
-        localStorage.setItem("tfw_profile", JSON.stringify(p));
-        location.href = "onboarding.html";
-      });
-    })();
-  </script>
+  <script src="js/profile.js"></script>
 </body>
 </html>
