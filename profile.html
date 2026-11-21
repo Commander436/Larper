@@ -47,6 +47,29 @@
         <div class="profile-meta" id="lesson-formats"></div>
       </section>
 
+      <section class="profile-card calendar-card" aria-labelledby="calendar-heading">
+        <div class="section-kicker">Private to you</div>
+        <h2 id="calendar-heading">My calendar</h2>
+        <p class="calendar-intro">Appointments and events on this calendar are visible only to your signed-in account. Once email delivery is configured, reminders are scheduled for the day before and the day of each event.</p>
+        <p class="calendar-timezone">Times use <strong id="calendar-timezone"></strong>.</p>
+        <form id="calendar-form" class="calendar-form">
+          <label for="event-title">Appointment or event</label>
+          <input class="field" id="event-title" maxlength="120" required>
+          <label for="event-description">Details <span class="field-hint">(optional)</span></label>
+          <textarea class="field" id="event-description" maxlength="2000" rows="3"></textarea>
+          <label for="event-starts-at">Date and time</label>
+          <input class="field" id="event-starts-at" type="datetime-local" required>
+          <div class="calendar-form-actions">
+            <button class="btn btn-primary" type="submit">Add appointment</button>
+            <button class="btn btn-ghost" id="cancel-event-edit" type="button" hidden>Cancel edit</button>
+          </div>
+        </form>
+        <p id="calendar-status" class="calendar-status" role="status" aria-live="polite"></p>
+        <div id="calendar-events" class="calendar-events" aria-live="polite">
+          <p class="muted">Loading your private calendar…</p>
+        </div>
+      </section>
+
       <section class="profile-card profile-messages" id="messages" aria-labelledby="messages-heading">
         <div class="messages-icon" aria-hidden="true">✉</div>
         <div>
@@ -61,5 +84,6 @@
   </main>
 
   <script src="js/profile.js"></script>
+  <script src="js/calendar.js"></script>
 </body>
 </html>
