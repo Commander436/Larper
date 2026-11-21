@@ -1,7 +1,20 @@
 import { clamp, parseTopics, rankPosts, validatePost } from "./feed-utils.js";
 import { eventLocalDate, reminderTypeForEvent, validateCalendarEvent } from "./calendar-utils.js";
+import {
+  PASSWORD_ITERATIONS,
+  SESSION_MAX_AGE_SECONDS,
+  base64UrlDecode as decodeAuthBase64Url,
+  base64UrlEncode,
+  hashPassword,
+  hashSessionToken,
+  normalizeUsername,
+  validateAccountRegistration,
+  validateLoginCredentials,
+  verifyPassword,
+} from "./auth-utils.js";
 
 const encoder = new TextEncoder();
+const SESSION_COOKIE = "__Host-larper_session";
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -88,19 +101,34 @@ async function verifyCloudflareAccess(request, env) {
   }
 }
 
+function cloudflareAccessConfigured(env) {
+  return env.FEED_AUTH_MODE === "cloudflare-access" &&
+    Boolean(env.CF_ACCESS_TEAM_DOMAIN) &&
+    Boolean(env.CF_ACCESS_AUD);
+}
+
 async function authenticate(request, env) {
-  if (env.FEED_AUTH_MODE !== "cloudflare-access") {
+  const accessConfigured = cloudflareAccessConfigured(env);
+  if (accessConfigured) {
+    const identity = await verifyCloudflareAccess(request, env);
+    if (identity) return { identity: { ...identity, authProvider: "cloudflare-access" } };
+  }
+
+  const sessionIdentity = await getAccountSession(request, env);
+  if (sessionIdentity) {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method) && !sameOriginRequest(request)) {
+      return { response: json({ error: "Cross-origin account changes are not allowed." }, 403) };
+    }
+    return { identity: sessionIdentity };
+  }
+
+  if (!accessConfigured && !env.FEED_DB) {
     return { response: json({
       error: "Authentication is not configured",
       code: "AUTH_NOT_CONFIGURED",
     }, 503) };
   }
-  const identity = await verifyCloudflareAccess(request, env);
-  if (!identity) return { response: json({
-    error: "Sign in with the configured Cloudflare Access provider",
-    code: "AUTH_REQUIRED",
-  }, 401) };
-  return { identity };
+  return { response: json({ error: "Sign in with your account or configured identity provider.", code: "AUTH_REQUIRED" }, 401) };
 }
 
 async function ensureUser(db, identity, saveEmail = false) {
@@ -116,6 +144,137 @@ async function ensureUser(db, identity, saveEmail = false) {
 
 function parseJsonBody(request) {
   return request.json().catch(() => null);
+}
+
+function sameOriginRequest(request) {
+  return request.headers.get("Origin") === new URL(request.url).origin;
+}
+
+function sessionToken(request) {
+  const cookie = request.headers.get("Cookie") || "";
+  const prefix = `${SESSION_COOKIE}=`;
+  const pair = cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(prefix));
+  return pair ? pair.slice(prefix.length) : "";
+}
+
+function sessionCookie(token, maxAge = SESSION_MAX_AGE_SECONDS) {
+  return `${SESSION_COOKIE}=${token}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
+
+async function createAccountSession(db, userId, provider) {
+  const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = base64UrlEncode(tokenBytes);
+  const tokenHash = await hashSessionToken(token);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000).toISOString();
+  await db.prepare("DELETE FROM auth_sessions WHERE expires_at <= ?").bind(now.toISOString()).run();
+  await db.prepare(
+    "INSERT INTO auth_sessions (token_hash, user_id, provider, expires_at) VALUES (?, ?, ?, ?)"
+  ).bind(tokenHash, userId, provider, expiresAt).run();
+  return token;
+}
+
+async function getAccountSession(request, env) {
+  if (!env.FEED_DB) return null;
+  const token = sessionToken(request);
+  if (!token) return null;
+  const tokenHash = await hashSessionToken(token);
+  const row = await env.FEED_DB.prepare(`
+    SELECT u.id, u.display_name AS name, u.email, c.username, c.role, s.provider AS auth_provider
+    FROM auth_sessions s
+    JOIN users u ON u.id = s.user_id
+    LEFT JOIN account_credentials c ON c.user_id = u.id
+    WHERE s.token_hash = ? AND s.expires_at > ?
+  `).bind(tokenHash, new Date().toISOString()).first();
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email || null,
+    username: row.username || null,
+    role: row.role || null,
+    authProvider: row.auth_provider,
+  };
+}
+
+async function revokeAccountSession(request, db) {
+  const token = sessionToken(request);
+  if (!token || !db) return;
+  const tokenHash = await hashSessionToken(token);
+  await db.prepare("DELETE FROM auth_sessions WHERE token_hash = ?").bind(tokenHash).run();
+}
+
+async function registerAccount(request, env) {
+  if (!sameOriginRequest(request)) return json({ error: "Account registration must come from this site." }, 403);
+  if (!env.FEED_DB) return json({ error: "Account storage is not configured." }, 503);
+  const body = await parseJsonBody(request);
+  const validationError = validateAccountRegistration(body);
+  if (validationError) return badRequest(validationError);
+
+  const username = normalizeUsername(body.username);
+  const userId = randomId("user");
+  const displayName = body.display_name.trim();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const passwordHash = await hashPassword(body.password, salt);
+  const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = base64UrlEncode(tokenBytes);
+  const tokenHash = await hashSessionToken(token);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000).toISOString();
+
+  try {
+    await env.FEED_DB.batch([
+      env.FEED_DB.prepare("DELETE FROM auth_sessions WHERE expires_at <= ?").bind(now.toISOString()),
+      env.FEED_DB.prepare("INSERT INTO users (id, display_name) VALUES (?, ?)").bind(userId, displayName),
+      env.FEED_DB.prepare(
+        "INSERT INTO account_credentials (user_id, username, password_salt, password_hash, password_iterations, role) VALUES (?, ?, ?, ?, ?, ?)"
+      ).bind(userId, username, base64UrlEncode(salt), passwordHash, PASSWORD_ITERATIONS, body.role),
+      env.FEED_DB.prepare(
+        "INSERT INTO auth_sessions (token_hash, user_id, provider, expires_at) VALUES (?, ?, 'username-password', ?)"
+      ).bind(tokenHash, userId, expiresAt),
+    ]);
+  } catch (error) {
+    if (String(error?.message || error).includes("UNIQUE constraint failed: account_credentials.username")) {
+      return json({ error: "That username is already in use." }, 409);
+    }
+    throw error;
+  }
+
+  return json({
+    identity: { id: userId, name: displayName, username, role: body.role, authProvider: "username-password" },
+  }, 201, { "set-cookie": sessionCookie(token) });
+}
+
+async function loginAccount(request, env) {
+  if (!sameOriginRequest(request)) return json({ error: "Sign-in must come from this site." }, 403);
+  if (!env.FEED_DB) return json({ error: "Account storage is not configured." }, 503);
+  const body = await parseJsonBody(request);
+  if (!validateLoginCredentials(body)) return badRequest("Enter a valid username and password.");
+
+  const username = normalizeUsername(body.username);
+  const row = await env.FEED_DB.prepare(`
+    SELECT u.id, u.display_name AS name, c.username, c.password_salt, c.password_hash,
+      c.password_iterations, c.role
+    FROM account_credentials c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.username = ?
+  `).bind(username).first();
+  const salt = row ? decodeAuthBase64Url(row.password_salt) : new Uint8Array(16);
+  const expectedHash = row ? row.password_hash : base64UrlEncode(new Uint8Array(32));
+  const iterations = row ? row.password_iterations : PASSWORD_ITERATIONS;
+  const validPassword = await verifyPassword(body.password, salt, expectedHash, iterations);
+  if (!row || !validPassword) return json({ error: "Invalid username or password." }, 401);
+
+  const token = await createAccountSession(env.FEED_DB, row.id, "username-password");
+  return json({
+    identity: {
+      id: row.id,
+      name: row.name,
+      username: row.username,
+      role: row.role,
+      authProvider: "username-password",
+    },
+  }, 200, { "set-cookie": sessionCookie(token) });
 }
 
 async function calendarEvents(request, env, identity) {
@@ -262,11 +421,12 @@ async function getFeed(env, url) {
       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count
     FROM posts p
     LEFT JOIN votes v ON v.post_id = p.id
-    WHERE (? = '' OR p.title LIKE '%' || ? || '%' OR p.body LIKE '%' || ? || '%' OR p.topics LIKE '%' || ? || '%')
+    WHERE (? = 'following' OR p.post_type = 'advice')
+      AND (? = '' OR p.title LIKE '%' || ? || '%' OR p.body LIKE '%' || ? || '%' OR p.topics LIKE '%' || ? || '%')
     GROUP BY p.id
     ORDER BY p.created_at DESC
     LIMIT ?
-  `).bind(search, search, search, search, limit).all();
+  `).bind(mode, search, search, search, search, limit).all();
 
   const posts = rankPosts(rows.results || [], interests, mode);
   return json({ posts, mode, search });
@@ -284,12 +444,79 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/auth/status") {
+      const usernamePasswordEnabled = Boolean(env.FEED_DB);
+      const cloudflareAccessEnabled = cloudflareAccessConfigured(env);
+      const enabled = usernamePasswordEnabled || cloudflareAccessEnabled;
       return json({
-        enabled: env.FEED_AUTH_MODE === "cloudflare-access",
-        reason: env.FEED_AUTH_MODE === "cloudflare-access"
-          ? ""
-          : "Shared writes require Cloudflare Access configuration. Local previews remain read-only.",
+        enabled,
+        usernamePasswordEnabled,
+        cloudflareAccessEnabled,
+        reason: enabled ? "" : "Account storage and Cloudflare Access are not configured. Local previews remain available.",
+        methods: [
+          ...(usernamePasswordEnabled ? ["password"] : []),
+          ...(cloudflareAccessEnabled ? ["cloudflare-access"] : []),
+        ],
       });
+    }
+    if (url.pathname === "/api/auth/register" && request.method === "POST") {
+      return registerAccount(request, env);
+    }
+    if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      return loginAccount(request, env);
+    }
+    if (url.pathname === "/api/auth/login" && request.method === "GET") {
+      if (!cloudflareAccessConfigured(env)) {
+        return json({ error: "Cloudflare Access is not configured.", code: "AUTH_NOT_CONFIGURED" }, 503);
+      }
+      const teamDomain = String(env.CF_ACCESS_TEAM_DOMAIN).replace(/^https?:\/\//, "").replace(/\/$/, "");
+      const audience = String(env.CF_ACCESS_AUD).split(",").map((value) => value.trim()).find(Boolean);
+      const loginUrl = new URL(`https://${teamDomain}/cdn-cgi/access/login/${encodeURIComponent(audience)}`);
+      loginUrl.searchParams.set("redirect_url", new URL("/api/auth/access-session", url.origin).toString());
+      return new Response(null, {
+        status: 302,
+        headers: { location: loginUrl.toString(), "cache-control": "no-store" },
+      });
+    }
+    if (url.pathname === "/api/auth/access-session" && request.method === "GET") {
+      if (!cloudflareAccessConfigured(env)) {
+        return json({ error: "Cloudflare Access is not configured.", code: "AUTH_NOT_CONFIGURED" }, 503);
+      }
+      if (!env.FEED_DB) return json({ error: "Account session storage is not configured." }, 503);
+      const identity = await verifyCloudflareAccess(request, env);
+      if (!identity) return json({ error: "Sign in with the configured Cloudflare Access provider.", code: "AUTH_REQUIRED" }, 401);
+      await ensureUser(env.FEED_DB, identity, true);
+      const token = await createAccountSession(env.FEED_DB, identity.id, "cloudflare-access");
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: new URL("/index.html?access=complete", url.origin).toString(),
+          "set-cookie": sessionCookie(token),
+          "cache-control": "no-store",
+        },
+      });
+    }
+    if (url.pathname === "/api/auth/logout" && request.method === "GET") {
+      await revokeAccountSession(request, env.FEED_DB);
+      const headers = { "set-cookie": sessionCookie("", 0), "cache-control": "no-store" };
+      if (!cloudflareAccessConfigured(env)) {
+        return new Response(null, { status: 302, headers: { ...headers, location: new URL("/index.html", url.origin).toString() } });
+      }
+      const logoutUrl = new URL("/cdn-cgi/access/logout", url.origin);
+      logoutUrl.searchParams.set("returnTo", new URL("/index.html", url.origin).toString());
+      return new Response(null, {
+        status: 302,
+        headers: { ...headers, location: logoutUrl.toString() },
+      });
+    }
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      if (!sameOriginRequest(request)) return json({ error: "Sign-out must come from this site." }, 403);
+      await revokeAccountSession(request, env.FEED_DB);
+      return json({ ok: true }, 200, { "set-cookie": sessionCookie("", 0) });
+    }
+    if (url.pathname === "/api/auth/session" && request.method === "GET") {
+      const auth = await authenticate(request, env);
+      if (auth.response) return auth.response;
+      return json({ identity: auth.identity });
     }
     const calendarEventMatch = url.pathname.match(/^\/api\/calendar\/events\/([^/]+)$/);
     if ((url.pathname === "/api/calendar/events" && (request.method === "GET" || request.method === "POST")) ||

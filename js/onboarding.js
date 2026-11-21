@@ -65,7 +65,7 @@
   // Preview data is not an authenticated account.
   try {
     const session = JSON.parse(sessionStorage.getItem("tfw_session") || "null");
-    if (!session || session.preview !== true) { window.location.replace("index.html"); return; }
+    if (!session || (!session.preview && !session.authProvider)) { window.location.replace("index.html"); return; }
   } catch (e) {
     window.location.replace("index.html");
     return;

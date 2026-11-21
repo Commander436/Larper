@@ -1,8 +1,23 @@
+import { filterMentorPublications, hasFeedProfile } from "./feed-utils.js";
+
 (function () {
+  let session = null;
   let profile = null;
   try {
+    session = JSON.parse(sessionStorage.getItem("tfw_session") || "null");
     profile = JSON.parse(sessionStorage.getItem("tfw_profile") || "null");
-  } catch (_) {}
+  } catch (error) {
+    window.location.replace("index.html");
+    return;
+  }
+  if (!session || (!session.preview && !session.authProvider)) {
+    window.location.replace("index.html");
+    return;
+  }
+  if (!profile || !profile.complete || !hasFeedProfile(profile, session)) {
+    window.location.replace("onboarding.html");
+    return;
+  }
 
   const API = (window.TFW_API_URL || "").replace(/\/$/, "");
   const api = (path) => `${API}${path}`;
@@ -81,11 +96,27 @@
       const response = await fetch(api(`/api/feed?${params}`), { credentials: "include" });
       if (!response.ok) throw new Error(`Feed unavailable (${response.status})`);
       const data = await response.json();
-      if (!Array.isArray(data.posts) || data.posts.length === 0) {
-        results.innerHTML = '<div class="feed-empty"><h2>No posts found</h2><p>Try another search or start the community conversation.</p></div>';
+      const posts = mode === "for-you"
+        ? filterMentorPublications(data.posts)
+        : (Array.isArray(data.posts) ? data.posts : []);
+      if (posts.length === 0) {
+        const title = mode === "for-you"
+          ? (search ? "No mentor publications found" : "No mentor publications yet")
+          : (search ? "No posts found" : "No posts yet");
+        const message = search
+          ? `Try a different search or clear it to browse ${mode === "for-you" ? "all mentor publications" : "all posts"}.`
+          : mode === "for-you"
+            ? "Mentor advice and ideas will appear here when shared."
+            : "Community posts will appear here when shared.";
+        results.innerHTML = `<div class="feed-empty"><h2>${title}</h2><p>${message}</p>${search ? '<button class="btn btn-ghost" type="button">Clear search</button>' : ""}</div>`;
+        results.querySelector("button")?.addEventListener("click", () => {
+          search = "";
+          $("search-input").value = "";
+          loadFeed();
+        });
         return;
       }
-      results.replaceChildren(...data.posts.map(renderPost));
+      results.replaceChildren(...posts.map(renderPost));
     } catch (error) {
       results.innerHTML = `<div class="feed-empty"><h2>Community feed unavailable</h2><p>${escapeHtml(error.message)}</p><p class="muted">Local preview data cannot be shared across users. Deploy the Worker and D1 database to enable the shared feed.</p></div>`;
     }

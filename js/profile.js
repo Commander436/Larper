@@ -8,7 +8,7 @@
     window.location.replace("index.html");
     return;
   }
-  if (!session || session.preview !== true) {
+  if (!session || (!session.preview && !session.authProvider)) {
     window.location.replace("index.html");
     return;
   }
@@ -18,7 +18,9 @@
   }
 
   const $ = (id) => document.getElementById(id);
+  const API = (window.TFW_API_URL || "").replace(/\/$/, "");
   const mentor = profile.role === "mentor";
+  if (session.authProvider === "cloudflare-access") $("sign-out").textContent = "Sign out";
   if (typeof profile.id !== "string" || !profile.id) profile.id = window.TfwMessaging.createProfileId();
   $("role-badge").textContent = mentor ? "Mentor" : "Learner";
   $("profile-name").textContent = profile.name || session.displayName || "Your profile";
@@ -88,8 +90,9 @@
     }
   });
   $("sign-out").addEventListener("click", () => {
+    const usesCloudflareAccess = session.authProvider === "cloudflare-access";
     sessionStorage.removeItem("tfw_session");
     sessionStorage.removeItem("tfw_profile");
-    window.location.href = "index.html";
+    window.location.href = usesCloudflareAccess ? `${API}/api/auth/logout` : "index.html";
   });
 })();
