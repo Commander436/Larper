@@ -1,28 +1,24 @@
 /*
- * Landing page: choose role (mentor / mentee) -> create account or log in.
- *
- * NOTE: There is no backend yet. The session and chosen role are kept in the
- * browser's localStorage so the flow can be tested end to end. Passwords are NOT
- * stored. Replace `proceed()` with real API calls (and real Google / Apple
- * OAuth) once the backend exists.
+ * Local profile preview only. This does not authenticate users or create
+ * accounts; connect a trusted backend before enabling sign-up or sign-in.
  */
 (function () {
   const $ = (id) => document.getElementById(id);
   const paneRole = $("pane-role");
   const paneForm = $("pane-form");
   const form = $("auth-form");
-  const email = $("email");
-  const username = $("username");
-  const password = $("password");
+  const displayName = $("display-name");
   const errorEl = $("auth-error");
+  let role = null;
+  let legacyDataCleared = true;
 
-  let mode = "signup"; // "signup" | "login"
-  let role = null;     // "mentor" | "mentee"
-
-  const store = {
-    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
-  };
+  try {
+    localStorage.removeItem("tfw_session");
+    localStorage.removeItem("tfw_profile");
+  } catch (error) {
+    legacyDataCleared = false;
+    $("auth-notice").textContent = "We couldn't clear data saved by the old preview. Check browser storage settings before continuing.";
+  }
 
   function show(pane) {
     paneRole.classList.toggle("hidden", pane !== "role");
@@ -30,66 +26,52 @@
     errorEl.textContent = "";
   }
 
-  function renderForm() {
-    const signup = mode === "signup";
-    $("form-title").textContent = signup ? "Create your account" : "Welcome back";
-    $("form-sub").textContent = signup
-      ? (role === "mentor" ? "Signing up as a mentor" : "Signing up as a mentee")
-      : "Log in to continue";
-    $("username-row").classList.toggle("hidden", !signup);
-    $("auth-submit").textContent = signup ? "Create account" : "Log in";
-    password.autocomplete = signup ? "new-password" : "current-password";
-    $("switch-line").innerHTML = signup
-      ? 'Already have an account? <button type="button" id="switch-btn">Log in</button>'
-      : 'New here? <button type="button" id="switch-btn">Create an account</button>';
-    $("switch-btn").addEventListener("click", () => {
-      if (signup) { mode = "login"; renderForm(); }
-      else { mode = "signup"; show("role"); }
-    });
-    show("form");
-  }
-
-  // Role selection
-  document.querySelectorAll(".role").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      role = btn.dataset.role;
-      mode = "signup";
-      renderForm();
-      email.focus();
-    });
-  });
-  $("go-login").addEventListener("click", () => { mode = "login"; renderForm(); });
-  $("back-to-role").addEventListener("click", () => show("role"));
-
-  function proceed(userEmail, userName) {
-    const existing = store.get("tfw_profile");
-    // Logging in: reuse the saved role. Signing up: use the chosen one.
-    const finalRole = mode === "login" ? (existing && existing.role) || role || "mentor" : role;
-    store.set("tfw_session", { email: userEmail, username: userName || null, role: finalRole, at: Date.now() });
-
-    if (mode === "signup" && (!existing || existing.role !== finalRole)) {
-      store.set("tfw_profile", { role: finalRole, step: 0, complete: false });
+  function startPreview() {
+    if (!legacyDataCleared) {
+      errorEl.textContent = "Close and reopen the page after enabling browser storage so old profile data can be removed.";
+      return;
     }
-    const profile = store.get("tfw_profile");
-    window.location.href = profile && profile.complete ? "profile.html" : "onboarding.html";
+    const name = displayName.value.trim();
+    if (name.length < 2 || name.length > 40) {
+      errorEl.textContent = "Enter a name between 2 and 40 characters.";
+      displayName.focus();
+      return;
+    }
+
+    try {
+      sessionStorage.setItem("tfw_session", JSON.stringify({
+        displayName: name,
+        role: role,
+        preview: true,
+      }));
+      sessionStorage.setItem("tfw_profile", JSON.stringify({
+        name: name,
+        role: role,
+        step: 0,
+        complete: false,
+      }));
+    } catch (error) {
+      errorEl.textContent = "This browser can't save the preview. Check your storage settings and try again.";
+      return;
+    }
+
+    window.location.href = "onboarding.html";
   }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    [email, username, password].forEach((f) => f.classList.remove("invalid"));
-    const fail = (field, msg) => { field.classList.add("invalid"); errorEl.textContent = msg; field.focus(); };
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) return fail(email, "Please enter a valid email address.");
-    if (mode === "signup" && !/^[A-Za-z0-9_]{3,20}$/.test(username.value.trim()))
-      return fail(username, "Usernames are 3 to 20 letters, numbers or underscores.");
-    if (password.value.length < 8) return fail(password, "Your password needs at least 8 characters.");
-
-    proceed(email.value.trim(), username.value.trim());
+  document.querySelectorAll(".role").forEach((button) => {
+    button.addEventListener("click", () => {
+      role = button.dataset.role;
+      $("form-sub").textContent = role === "mentor"
+        ? "Previewing the mentor profile setup"
+        : "Previewing the learner profile setup";
+      show("form");
+      displayName.focus();
+    });
   });
 
-  document.querySelectorAll(".social").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      errorEl.textContent = "Google and Apple sign-in will be connected once the backend is ready. Please use email for now.";
-    });
+  $("back-to-role").addEventListener("click", () => show("role"));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    startPreview();
   });
 })();
