@@ -28,6 +28,16 @@
     if (!profile) return;
     $("feed-profile-name").textContent = profile.name || "Community member";
     $("feed-profile-role").textContent = profile.role === "mentor" ? "Mentor" : "Learner";
+    if (profile.role === "mentee" && typeof profile.id === "string" && profile.id) {
+      try {
+        const streak = window.TfwLearningStreak.createStore(window.localStorage).recordLogin(profile.id);
+        $("feed-streak-count").textContent = String(streak.count);
+        $("feed-streak-label").textContent = streak.count === 1 ? " day learning streak" : " days learning streak";
+        $("feed-learning-streak").hidden = false;
+      } catch (error) {
+        $("feed-streak-status").textContent = error.message;
+      }
+    }
     const tags = $("feed-topic-tags");
     interests().forEach((topic) => {
       const tag = document.createElement("span");

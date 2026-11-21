@@ -25,6 +25,16 @@
   $("profile-subtitle").textContent = mentor
     ? "Sharing skills and helping others grow."
     : "Learning new skills and finding a mentor.";
+  if (!mentor) {
+    try {
+      const streak = window.TfwLearningStreak.createStore(window.localStorage).recordLogin(profile.id);
+      $("profile-streak-count").textContent = String(streak.count);
+      $("profile-streak-label").textContent = streak.count === 1 ? " day learning streak" : " days learning streak";
+      $("profile-learning-streak").hidden = false;
+    } catch (error) {
+      $("profile-streak-status").textContent = error.message;
+    }
+  }
   $("about-text").textContent = profile.about || "Add a little about yourself to help the community get to know you.";
   $("topics-heading").textContent = mentor ? "What I teach" : "What I want to learn";
 
