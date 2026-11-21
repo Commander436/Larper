@@ -2,17 +2,7 @@
 
 By Darris Koikkara and Nithis Nagappan
 
-Website for **Tech for Women**, a nonprofit bringing tech education to underserved students across the Valley through free workshops and classes. The site makes it easier for mentors and mentees to connect online (calls, chat) or in person, with community posts and private calendar reminders.
-
-## What's built so far
-
-Everything starts on `index.html`. When Cloudflare Access is configured, users can sign in through Access before choosing **mentor** or **mentee**. Profile details remain a local preview; they are not account creation or synced profile storage.
-
-**Mentor flow** (`onboarding.html`): what you teach (broad to specific, up to 4) → ad title (12+ words) → about your lessons (40+ words) → about you (30+ words) → lesson format (public place / travel / online) → profile photo.
-
-**Mentee flow**: what you're interested in learning (up to 6) → a short profile description → profile photo.
-
-Both end on `profile.html`, the profile home with profile details, a teaching ad or learning plan, and a two-way messaging preview.
+Website for **Tech for Women**, a nonprofit bringing tech education to underserved students across the Valley through free workshops and classes. The site makes it easier for mentors and mentees to connect online (calls, chat) or in person, with community posts and private calendar email reminders.
 
 ## Run it
 
