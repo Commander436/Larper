@@ -10,6 +10,8 @@
   const startsAtEl = document.getElementById("event-starts-at");
   const cancelEl = document.getElementById("cancel-event-edit");
   let editingId = null;
+  let previewMode = false;
+  const previewKey = "tfw_preview_calendar_events";
 
   if (!form || !eventsEl) return;
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -22,8 +24,31 @@
       headers: { ...(options.body ? { "content-type": "application/json" } : {}), ...options.headers },
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `Calendar request failed (${response.status}).`);
+    if (!response.ok) {
+      const error = new Error(data.error || `Calendar request failed (${response.status}).`);
+      error.code = data.code;
+      error.status = response.status;
+      throw error;
+    }
     return data;
+  }
+
+  function previewEvents() {
+    try {
+      const events = JSON.parse(localStorage.getItem(previewKey) || "[]");
+      return Array.isArray(events) ? events : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function savePreviewEvents(events) {
+    localStorage.setItem(previewKey, JSON.stringify(events));
+  }
+
+  function previewId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `preview_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   }
 
   function localInputValue(instant) {
@@ -78,7 +103,11 @@
     remove.addEventListener("click", async () => {
       if (!window.confirm(`Delete "${event.title}" from your calendar?`)) return;
       try {
-        await request(`/api/calendar/events/${encodeURIComponent(event.id)}`, { method: "DELETE" });
+        if (previewMode) {
+          savePreviewEvents(previewEvents().filter((item) => item.id !== event.id));
+        } else {
+          await request(`/api/calendar/events/${encodeURIComponent(event.id)}`, { method: "DELETE" });
+        }
         await loadEvents();
       } catch (error) {
         statusEl.textContent = error.message;
@@ -90,6 +119,19 @@
   }
 
   async function loadEvents() {
+    if (previewMode) {
+      const events = previewEvents();
+      eventsEl.replaceChildren();
+      if (!events.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No appointments yet. Add one above.";
+        eventsEl.append(empty);
+        return;
+      }
+      eventsEl.append(...events.map(makeEventCard));
+      return;
+    }
     const { events } = await request("/api/calendar/events");
     eventsEl.replaceChildren();
     if (!events.length) {
@@ -125,22 +167,46 @@
       timezone: localTimeZone,
     };
     try {
-      await request(editingId
-        ? `/api/calendar/events/${encodeURIComponent(editingId)}`
-        : "/api/calendar/events", {
-        method: editingId ? "PATCH" : "POST",
-        body: JSON.stringify(body),
-      });
+      if (previewMode) {
+        const events = previewEvents();
+        if (editingId) {
+          const index = events.findIndex((item) => item.id === editingId);
+          if (index !== -1) events[index] = { ...events[index], ...body, updated_at: new Date().toISOString() };
+        } else {
+          events.push({
+            id: previewId(),
+            ...body,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+        savePreviewEvents(events);
+      } else {
+        await request(editingId
+          ? `/api/calendar/events/${encodeURIComponent(editingId)}`
+          : "/api/calendar/events", {
+          method: editingId ? "PATCH" : "POST",
+          body: JSON.stringify(body),
+        });
+      }
       clearEdit();
       await loadEvents();
-      statusEl.textContent = "Calendar updated.";
+      statusEl.textContent = previewMode ? "Preview calendar updated." : "Calendar updated.";
     } catch (error) {
       statusEl.textContent = error.message;
     }
   });
 
   loadEvents().catch((error) => {
-    statusEl.textContent = `${error.message} Your calendar is available only after secure sign-in and calendar storage are configured.`;
-    form.hidden = true;
+    if (error.code === "AUTH_NOT_CONFIGURED" || error.status === 503) {
+      previewMode = true;
+      statusEl.textContent = "Preview mode: appointments are saved only in this browser. Secure sign-in and calendar storage are not configured.";
+      loadEvents().catch(() => {
+        statusEl.textContent = "This browser cannot access calendar preview storage.";
+      });
+    } else {
+      statusEl.textContent = `${error.message} Secure sign-in is required to access the private calendar.`;
+      form.hidden = true;
+    }
   });
 })();

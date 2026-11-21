@@ -98,7 +98,7 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 
 .ob-main { max-width: 1120px; margin: 0 auto; padding: 64px 32px 60px; display: grid; grid-template-columns: 5fr 6fr; gap: 80px; align-items: start; }
 .tip { background: linear-gradient(150deg, #fff4e8 0%, #f6e2d4 65%, #f4ddcb 100%); border: 1px solid #efd1bb; border-left: 6px solid var(--primary); border-radius: var(--radius-lg); padding: 36px; position: sticky; top: 130px; min-height: 410px; overflow: hidden; box-shadow: 0 16px 38px rgba(89, 64, 46, .10); }
-.tip::after { content: ""; display: block; height: 100px; margin: 22px -12px -18px; background: radial-gradient(circle at 78% 32%, #f4b86a 0 22px, transparent 23px), linear-gradient(160deg, transparent 42%, #c9b29d 42% 60%, transparent 60%), linear-gradient(18deg, transparent 39%, #99ad98 39% 63%, transparent 63%), linear-gradient(0deg, #d69a67 0 34%, transparent 35%); opacity: .8; }
+.tip::after { content: ""; display: block; height: 100px; margin: 22px -12px -18px; background: radial-gradient(circle at 78% 28%, #f4b86a 0 18px, transparent 19px), linear-gradient(145deg, transparent 58%, #c9b29d 59% 68%, transparent 69%), linear-gradient(215deg, transparent 52%, #99ad98 53% 67%, transparent 68%), linear-gradient(0deg, #d69a67 0 38%, transparent 39%); opacity: .9; border-radius: 14px; }
 .tip h3 { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; font-family: var(--font); font-size: 1.55rem; font-weight: 750; color: var(--ink); letter-spacing: -.5px; }
 .tip h3 svg { width: 28px; height: 28px; flex: none; }
 .tip p, .tip li { font-size: 1.04rem; line-height: 1.65; margin: 0 0 14px; color: var(--text); }
@@ -153,6 +153,41 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .badge { display: inline-block; background: var(--tint); color: var(--primary); font-weight: 700; font-size: .85rem; padding: 6px 14px; border-radius: 999px; margin-bottom: 14px; }
 
 /* ---------- Profile home ---------- */
+.profile-page {
+  background:
+    radial-gradient(circle at 92% 14%, rgba(244,184,106,.20) 0 70px, transparent 71px),
+    linear-gradient(165deg, transparent 0 68%, rgba(169,183,155,.20) 68% 78%, transparent 79%),
+    linear-gradient(25deg, transparent 0 74%, rgba(214,154,103,.18) 74% 82%, transparent 83%),
+    #f8f3ef;
+  background-attachment: fixed;
+}
+.profile-page::before {
+  content: "";
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 260px;
+  height: 180px;
+  pointer-events: none;
+  opacity: .28;
+  background:
+    linear-gradient(90deg, transparent 0 36%, #55705b 37% 40%, transparent 41%) 0 0 / 52px 180px no-repeat,
+    linear-gradient(160deg, transparent 0 57%, #c3ad95 58% 70%, transparent 71%),
+    linear-gradient(18deg, transparent 0 55%, #99ad98 56% 70%, transparent 71%);
+  clip-path: polygon(0 50%, 18% 34%, 33% 50%, 53% 18%, 72% 48%, 88% 32%, 100% 48%, 100% 100%, 0 100%);
+}
+.profile-page .profile-wrap { position: relative; z-index: 1; }
+.profile-desert-art,
+.feed-desert-art {
+  position: fixed;
+  z-index: 0;
+  right: 18px;
+  bottom: 12px;
+  width: 260px;
+  height: auto;
+  opacity: .16;
+  pointer-events: none;
+}
 .profile-nav { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .profile-nav nav { display: flex; align-items: center; gap: 26px; }
 .profile-nav nav a, .profile-nav nav button { color: var(--muted); text-decoration: none; font-size: .95rem; font-weight: 650; background: none; border: 0; padding: 8px 0; }
@@ -233,7 +268,14 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .preview-note { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 26px; }
 
 /* ---------- Community feed ---------- */
-.feed-page { background: var(--bg); }
+.feed-page {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(244,184,106,.17) 0 55px, transparent 56px),
+    linear-gradient(155deg, transparent 0 72%, rgba(169,183,155,.16) 72% 82%, transparent 83%),
+    linear-gradient(20deg, transparent 0 78%, rgba(214,154,103,.14) 78% 86%, transparent 87%),
+    var(--bg);
+  background-attachment: fixed;
+}
 .feed-top .inner { max-width: 1180px; margin: 0 auto; }
 .feed-nav { display: grid; grid-template-columns: 220px minmax(260px, 620px) auto; align-items: center; gap: 28px; }
 .feed-nav nav { display: flex; justify-content: flex-end; gap: 18px; }
