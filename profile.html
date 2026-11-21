@@ -47,18 +47,21 @@
       </section>
 
       <section class="profile-card profile-messages" id="messages" aria-labelledby="messages-heading">
-        <div class="messages-icon" aria-hidden="true">✉</div>
-        <div>
-          <div class="section-kicker">Your inbox</div>
-          <h2 id="messages-heading">Messages</h2>
-          <p>Messages will appear here when secure accounts and messaging are connected.</p>
+        <div class="messages-heading">
+          <div class="messages-icon" aria-hidden="true">✉</div>
+          <div>
+            <div class="section-kicker">Your inbox</div>
+            <h2 id="messages-heading">Messages</h2>
+          </div>
         </div>
-        <span class="empty-label">No messages yet</span>
+        <p class="messaging-status" id="messaging-status" role="status"></p>
+        <div id="messaging-app" aria-label="Messaging preview"></div>
       </section>
     </div>
-    <p class="preview-note">Local preview only — this is not a real account and cannot receive messages.</p>
+    <p class="preview-note">Local preview only — this is not a real account. Messages stay in this browser and aren't private or synced.</p>
   </main>
 
+  <script src="js/messaging.js"></script>
   <script src="js/profile.js"></script>
 </body>
 </html>

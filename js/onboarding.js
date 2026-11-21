@@ -24,7 +24,7 @@
 
   // ---------- State ----------
   const blank = {
-    name: "", role: "", step: 0, topics: [], title: "", lessons: "", about: "", photo: "",
+    id: "", name: "", role: "", step: 0, topics: [], title: "", lessons: "", about: "", photo: "",
     location: { publicPlace: false, travel: false, online: false, miles: "" },
     complete: false,
   };
@@ -35,6 +35,7 @@
       if (!saved || typeof saved !== "object" || Array.isArray(saved)) return structuredClone(blank);
       const location = saved.location && typeof saved.location === "object" ? saved.location : {};
       return {
+        id: typeof saved.id === "string" && saved.id ? saved.id : window.TfwMessaging.createProfileId(),
         name: typeof saved.name === "string" ? saved.name : "",
         role: saved.role === "mentor" || saved.role === "mentee" ? saved.role : "",
         step: Number.isInteger(saved.step) && saved.step >= 0 ? saved.step : 0,
@@ -169,7 +170,16 @@
     if (b) b.disabled = !on;
   }
   function finish() {
-    state.complete = true; save();
+    state.complete = true;
+    save();
+    try {
+      window.TfwMessaging.createStore(window.localStorage).registerProfile(state);
+    } catch (error) {
+      state.complete = false;
+      save();
+      window.alert(error.message);
+      return;
+    }
     window.location.href = "profile.html";
   }
 
