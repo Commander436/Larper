@@ -31,6 +31,11 @@
           <span id="feed-profile-role"></span>
         </div>
       </div>
+      <div class="feed-streak learning-streak" id="feed-learning-streak" hidden>
+        <span class="learning-streak-icon" aria-hidden="true">🔥</span>
+        <span><strong id="feed-streak-count">0</strong><span id="feed-streak-label"> day learning streak</span></span>
+      </div>
+      <p class="streak-status" id="feed-streak-status" role="status" aria-live="polite"></p>
       <div class="feed-interests">
         <h2>Your interests</h2>
         <div class="topic-tags" id="feed-topic-tags"></div>
@@ -80,6 +85,7 @@
     </form>
   </dialog>
 
+  <script src="js/streak.js"></script>
   <script src="js/feed.js"></script>
 </body>
 </html>

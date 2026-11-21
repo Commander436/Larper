@@ -26,6 +26,11 @@
         <span class="badge" id="role-badge"></span>
         <h1 id="profile-name"></h1>
         <p id="profile-subtitle"></p>
+        <div class="learning-streak" id="profile-learning-streak" hidden>
+          <span class="learning-streak-icon" aria-hidden="true">🔥</span>
+          <span><strong id="profile-streak-count">0</strong><span id="profile-streak-label"> day learning streak</span></span>
+        </div>
+        <p class="streak-status" id="profile-streak-status" role="status" aria-live="polite"></p>
         <button class="btn btn-ghost" id="edit-profile" type="button">Edit profile</button>
       </div>
     </div>
@@ -86,6 +91,7 @@
   </main>
 
   <script src="js/messaging.js"></script>
+  <script src="js/streak.js"></script>
   <script src="js/profile.js"></script>
   <script src="js/calendar.js"></script>
 </body>
