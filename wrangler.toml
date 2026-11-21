@@ -13,3 +13,6 @@ database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
 [vars]
 FEED_AUTH_MODE = "disabled"
+
+[triggers]
+crons = ["0 * * * *"]

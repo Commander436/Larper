@@ -181,6 +181,19 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .learner-goals #lesson-formats { display: none; }
 .profile-messages { grid-column: 1 / -1; background: #f7f8fa; }
 .messages-heading { display: flex; align-items: center; gap: 16px; }
+.calendar-card { grid-column: 1 / -1; }
+.calendar-intro, .calendar-timezone { margin-bottom: 12px !important; }
+.calendar-timezone { color: var(--muted) !important; font-size: .9rem; }
+.calendar-form { display: grid; gap: 9px; max-width: 680px; }
+.calendar-form .field { margin-bottom: 4px; }
+.calendar-form-actions, .calendar-event-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.calendar-status { min-height: 1.5em; margin: 12px 0 !important; color: var(--primary-dark) !important; font-size: .9rem; }
+.calendar-events { display: grid; gap: 12px; }
+.calendar-event { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+.calendar-event h3 { margin: 0 0 6px; color: var(--ink); font-size: 1.05rem; }
+.calendar-event p { margin: 4px 0; overflow-wrap: anywhere; }
+.calendar-event-date { color: var(--muted) !important; font-size: .88rem; }
+.calendar-event-actions { flex: none; }
 .profile-messages h2 { margin-bottom: 5px; }
 .messaging-status { color: var(--muted) !important; font-size: .85rem !important; margin: 14px 0 !important; }
 .messages-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: #e7edf5; color: var(--accent); font-size: 1.35rem; }
@@ -321,6 +334,7 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
   .message-sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
   .message-thread-list { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   .message-panel { min-height: 280px; }
+  .calendar-event { flex-direction: column; }
   .feed-nav { gap: 12px; }
   .feed-nav nav { gap: 10px; }
   .feed-nav nav a { font-size: .82rem; }
