@@ -1,6 +1,4 @@
-# Larper
-
-**Larper — Tech for Women mentor and community platform**
+**Tech for Women mentor and community platform**
 
 **Team:** Darris Koikkara and Nithis Nagappan
 **Nonprofit partner:** Tech for Women
