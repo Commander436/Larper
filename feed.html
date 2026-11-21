@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tech for Women – Community</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="feed-page">
+  <header class="ob-top feed-top">
+    <div class="inner feed-nav">
+      <a class="logo" href="feed.html">Tech for Women</a>
+      <form class="feed-search" id="feed-search" role="search">
+        <label class="sr-only" for="search-input">Search posts</label>
+        <input id="search-input" type="search" placeholder="Search advice, questions, and topics" autocomplete="off">
+        <button type="submit" aria-label="Search">Search</button>
+      </form>
+      <nav aria-label="Main navigation">
+        <a class="active" href="feed.html" aria-current="page">Home</a>
+        <a href="profile.html">Profile</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="feed-wrap">
+    <aside class="feed-sidebar" aria-label="Community profile">
+      <div class="feed-profile-card">
+        <span class="avatar feed-avatar" id="feed-avatar" aria-hidden="true">👤</span>
+        <div>
+          <strong id="feed-profile-name">Community member</strong>
+          <span id="feed-profile-role"></span>
+        </div>
+      </div>
+      <div class="feed-interests">
+        <h2>Your interests</h2>
+        <div class="topic-tags" id="feed-topic-tags"></div>
+      </div>
+    </aside>
+
+    <section class="feed-main" aria-label="Community posts">
+      <div class="feed-toolbar">
+        <div class="feed-tabs" role="tablist" aria-label="Feed mode">
+          <button type="button" role="tab" aria-selected="true" data-mode="for-you">For You</button>
+          <button type="button" role="tab" aria-selected="false" data-mode="following">Following</button>
+        </div>
+        <button class="btn btn-primary feed-create" id="create-post" type="button">+ New post</button>
+      </div>
+      <div class="auth-status" id="auth-status" hidden></div>
+      <div class="feed-results" id="feed-results" aria-live="polite">
+        <p class="feed-loading">Loading community posts…</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="post-dialog" id="post-dialog">
+    <form method="dialog" id="post-form">
+      <div class="dialog-heading">
+        <div>
+          <span class="section-kicker">Community post</span>
+          <h2>Create a post</h2>
+        </div>
+        <button class="dialog-close" value="cancel" aria-label="Close">×</button>
+      </div>
+      <label>Post type</label>
+      <div class="post-types">
+        <label><input type="radio" name="post-type" value="advice" checked><span>Mentor advice</span></label>
+        <label><input type="radio" name="post-type" value="question"><span>Mentee question</span></label>
+      </div>
+      <label for="post-title">Title</label>
+      <input class="field" id="post-title" maxlength="140" required>
+      <label for="post-body">Details</label>
+      <textarea class="field" id="post-body" maxlength="5000" required></textarea>
+      <label for="post-topics">Topics <span class="field-hint">(comma separated)</span></label>
+      <input class="field" id="post-topics" maxlength="180" placeholder="Python, Career, Beginner">
+      <p class="form-error" id="post-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel" type="submit">Cancel</button>
+        <button class="btn btn-primary" id="post-submit" value="submit" type="submit">Publish post</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/feed.js"></script>
+</body>
+</html>

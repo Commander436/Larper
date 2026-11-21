@@ -1,0 +1,15 @@
+name = "larper-community-feed"
+main = "worker/index.js"
+compatibility_date = "2026-01-01"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "FEED_DB"
+database_name = "larper-community"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+FEED_AUTH_MODE = "disabled"
