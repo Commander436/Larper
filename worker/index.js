@@ -250,6 +250,7 @@ async function dispatchCalendarReminders(env, scheduledTime) {
 }
 
 async function getFeed(env, url) {
+  if (!env.FEED_DB) return json({ error: "Community storage is not configured." }, 503);
   const limit = clamp(url.searchParams.get("limit"), 1, 50, 30);
   const search = (url.searchParams.get("search") || url.searchParams.get("q") || "").trim().slice(0, 100);
   const interests = url.searchParams.get("interests") || "";
@@ -272,6 +273,7 @@ async function getFeed(env, url) {
 }
 
 async function getComments(env, postId) {
+  if (!env.FEED_DB) return json({ error: "Community storage is not configured." }, 503);
   const rows = await env.FEED_DB.prepare(
     "SELECT id, post_id, author_name, parent_id, body, created_at FROM comments WHERE post_id = ? ORDER BY created_at ASC"
   ).bind(postId).all();
