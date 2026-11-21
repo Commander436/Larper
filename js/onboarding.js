@@ -1,19 +1,27 @@
 /*
- * Mentor / teacher onboarding flow.
- * Steps: topics -> title -> lessons -> about you -> location -> phone -> profile.
+ * Onboarding flow, driven by the role chosen on the landing page.
+ *   Mentor: topics -> title -> lessons -> about you -> location -> phone -> photo -> profile
+ *   Mentee: interests -> photo -> profile
  * Progress is saved in localStorage ("tfw_profile") so refreshing doesn't lose work.
  * There is no backend yet: swap `saveProfile` for an API call later.
  */
 (function () {
   // ---------- Config ----------
   const CONFIG = {
-    maxTopics: 4,
+    maxTopics: 4,      // mentors: subjects they teach
+    maxInterests: 6,   // mentees: subjects they want to learn
+    photoRequired: true,
+    photoMaxMB: 5,
+    photoSize: 512,    // stored square size in px
     minTitleWords: 12,
     minLessonWords: 40,
     minAboutWords: 30,
   };
 
-  const STEPS = ["topics", "title", "lessons", "about", "location", "phone"];
+  const FLOWS = {
+    mentor: ["topics", "title", "lessons", "about", "location", "phone", "photo"],
+    mentee: ["topics", "photo"],
+  };
 
   const COUNTRIES = [
     ["US", "🇺🇸", "+1", 10], ["CA", "🇨🇦", "+1", 10], ["MX", "🇲🇽", "+52", 10],
@@ -22,7 +30,7 @@
 
   // ---------- State ----------
   const blank = {
-    step: 0, topics: [], title: "", lessons: "", about: "",
+    role: "", step: 0, topics: [], title: "", lessons: "", about: "", photo: "",
     location: { house: false, travel: false, online: false, address: "", city: "", zip: "", miles: "" },
     phone: { country: "US", number: "" },
     complete: false,
@@ -48,6 +56,11 @@
 
   const state = load();
   if (state.complete) { window.location.replace("profile.html"); return; }
+  if (!FLOWS[state.role]) { window.location.replace("index.html"); return; } // no role chosen yet
+  const STEPS = FLOWS[state.role];
+  const isMentor = state.role === "mentor";
+  const maxPicks = isMentor ? CONFIG.maxTopics : CONFIG.maxInterests;
+  if (state.step >= STEPS.length) state.step = 0;
   let topicPath = []; // current position in the topic tree (names)
 
   const stepEl = document.getElementById("step");
@@ -77,15 +90,20 @@
   }
 
   const ICONS = {
-    smile: '<svg viewBox="0 0 24 24" fill="none" stroke="#ff6161" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.5" r=".6" fill="#ff6161"/><circle cx="15" cy="9.5" r=".6" fill="#ff6161"/></svg>',
-    check: '<svg viewBox="0 0 16 16" fill="none" stroke="#ff6161" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+    smile: '<svg viewBox="0 0 24 24" fill="none" stroke="#5b3fd1" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.5" r=".6" fill="#5b3fd1"/><circle cx="15" cy="9.5" r=".6" fill="#5b3fd1"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="#5b3fd1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
     chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   };
 
   // ---------- Tips (left panel) ----------
   const TIPS = {
-    topics: { html: `<p>You can add up to ${CONFIG.maxTopics} subjects to a single profile. Choose subjects you can teach or mentor in at the same time.</p>
-      <p>Start with a broad area, then pick the specific topic you're strongest in.</p>` },
+    topics: { html: isMentor
+      ? `<p>You can add up to ${CONFIG.maxTopics} subjects to your profile. Choose subjects you can teach or mentor in at the same time.</p>
+         <p>Start with a broad area, then pick the specific topic you're strongest in.</p>`
+      : `<p>Tell us what you'd like to learn. You can pick up to ${CONFIG.maxInterests} topics, and we'll use them to help match you with mentors.</p>
+         <p>Not sure yet? Browse a few areas and choose what sounds fun. You can change these later.</p>` },
+    photo: { html: `<p>A friendly photo helps ${isMentor ? "students and families feel comfortable getting in touch" : "your mentor recognize you and feel connected"}.</p>
+      <ul><li>Use a clear, recent photo</li><li>${isMentor ? "Face the camera, good lighting" : "Any photo you're comfortable sharing"}</li><li>JPG, PNG or WebP, up to ${CONFIG.photoMaxMB} MB</li></ul>` },
     title: { html: `<p>Your title is the first thing students see. Make it unique, make it welcoming, and use at least ${CONFIG.minTitleWords} words to cover:</p>
       <ul><li>The subject you teach</li><li>Your experience and teaching approach</li><li>What sets you apart</li></ul>
       <div class="tip-label">👍 What works</div>
@@ -148,7 +166,7 @@
     const picked = state.topics;
     const shown = picked.map((p) => p.split(" › ").pop());
 
-    const heading = h("h1", {}, "You teach ", h("em", {}, shown.length ? shown.join(", ") : "…"));
+    const heading = h("h1", {}, isMentor ? "You teach " : "You want to learn ", h("em", {}, shown.length ? shown.join(", ") : "…"));
 
     const crumbs = h("div", { class: "crumbs" },
       h("button", { type: "button", onclick: () => { topicPath = []; render(); } }, "All topics"),
@@ -175,15 +193,15 @@
 
     const chips = h("div", { class: "chips" },
       picked.map((p) => h("button", { class: "chip", type: "button", title: p, onclick: () => toggleTopic(p) }, p.split(" › ").pop())));
-    const hint = h("p", { class: "hint" }, `${picked.length} of ${CONFIG.maxTopics} selected`);
+    const hint = h("p", { class: "hint" }, `${picked.length} of ${maxPicks} selected`);
 
     stepEl.replaceChildren(heading, crumbs, list, chips, hint, nav(picked.length > 0, goNext));
   }
   function toggleTopic(full) {
     const i = state.topics.indexOf(full);
     if (i >= 0) state.topics.splice(i, 1);
-    else if (state.topics.length < CONFIG.maxTopics) state.topics.push(full);
-    else { alert(`You can choose up to ${CONFIG.maxTopics} subjects.`); return; }
+    else if (state.topics.length < maxPicks) state.topics.push(full);
+    else { alert(`You can choose up to ${maxPicks} topics.`); return; }
     save(); render();
   }
 
@@ -284,7 +302,56 @@
       h("p", { class: "label-muted" }, "Your telephone number"),
       h("p", { class: "label-sub" }, "Your number never appears on the site. It's only sent to the students you accept to teach."),
       h("div", { class: "phone" }, select, input),
-      nav(phoneValid(), goNext, "Finish")
+      nav(phoneValid(), goNext)
+    );
+  }
+
+
+  // ---------- Photo step ----------
+  // Resizes to a square on a canvas so we store a small image (~50-100 KB),
+  // not a multi-megabyte original. Swap for a real upload (e.g. object storage) later.
+  function processPhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return reject(new Error("Please choose a JPG, PNG or WebP image."));
+      if (file.size > CONFIG.photoMaxMB * 1024 * 1024) return reject(new Error(`That file is too large. Max ${CONFIG.photoMaxMB} MB.`));
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const n = CONFIG.photoSize, side = Math.min(img.width, img.height);
+        const c = document.createElement("canvas"); c.width = c.height = n;
+        c.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, n, n);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("We couldn't read that image. Try another one.")); };
+      img.src = url;
+    });
+  }
+  function renderPhoto() {
+    const avatar = h("div", { class: "avatar", role: "img", "aria-label": "Profile photo preview" }, state.photo ? "" : "📷");
+    if (state.photo) avatar.style.backgroundImage = `url(${state.photo})`;
+    const msg = h("p", { class: "hint", id: "photo-msg", role: "alert" }, "");
+    const input = h("input", { type: "file", id: "photo-input", accept: "image/jpeg,image/png,image/webp", class: "sr-only" });
+    const choose = h("button", { class: "btn btn-primary", type: "button", onclick: () => input.click() }, state.photo ? "Choose a different photo" : "Upload a photo");
+    const actions = h("div", { class: "photo-actions" }, choose,
+      state.photo ? h("button", { class: "btn btn-ghost", type: "button", onclick: () => { state.photo = ""; save(); renderPhoto(); } }, "Remove") : null);
+    const drop = h("div", { class: "photo-drop" }, avatar, actions, h("p", {}, "or drag and drop an image here"));
+
+    async function take(file) {
+      if (!file) return;
+      try {
+        state.photo = await processPhoto(file); save(); renderPhoto();
+      } catch (err) { msg.textContent = err.message; }
+    }
+    input.addEventListener("change", () => take(input.files[0]));
+    ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+    ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+    drop.addEventListener("drop", (e) => take(e.dataTransfer.files[0]));
+
+    stepEl.replaceChildren(
+      h("h1", {}, "Add your ", h("em", {}, "profile photo")),
+      drop, input, msg,
+      nav(!CONFIG.photoRequired || !!state.photo, goNext, "Finish")
     );
   }
 
@@ -300,6 +367,7 @@
     else if (key === "about") renderText({ key: "about", title: h("span", {}, "About ", h("em", {}, "you")), min: CONFIG.minAboutWords, rows: 9 });
     else if (key === "location") renderLocation();
     else if (key === "phone") renderPhone();
+    else if (key === "photo") renderPhoto();
   }
 
   render();

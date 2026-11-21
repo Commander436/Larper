@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tech for Women – Your profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="ob-top"><div class="inner"><a class="logo" href="index.html">tech for women</a></div></div>
+  <div class="ob-top"><div class="inner"><a class="logo" href="index.html">Tech for Women</a></div></div>
 
   <main class="profile-wrap">
+    <div class="avatar" id="avatar" role="img" aria-label="Your profile photo"></div>
+    <span class="badge" id="role-badge"></span>
     <h1>You're all set! 🎉</h1>
     <p>Your profile page is coming soon. Here's what you've told us so far:</p>
     <dl class="summary" id="summary"></dl>
@@ -28,19 +30,24 @@
       } catch (e) {}
       if (!p || !p.complete) { location.replace("onboarding.html"); return; }
 
-      var L = p.location || {};
-      var where = [];
-      if (L.house) where.push("At my house (" + [L.city, L.zip].filter(Boolean).join(" ") + ")");
-      if (L.travel) where.push("Can travel up to " + L.miles + " miles");
-      if (L.online) where.push("Online");
+      var mentor = p.role !== "mentee";
+      document.getElementById("role-badge").textContent = mentor ? "Mentor" : "Mentee";
+      var av = document.getElementById("avatar");
+      if (p.photo && /^data:image\/(jpeg|png|webp);base64,/.test(p.photo)) av.style.backgroundImage = "url(" + p.photo + ")";
+      else av.textContent = "👤";
 
-      var rows = [
-        ["Subjects", (p.topics || []).map(function (t) { return t.split(" › ").pop(); }).join(", ")],
-        ["Ad title", p.title],
-        ["About my lessons", p.lessons],
-        ["About me", p.about],
-        ["Lesson location", where.join("\n")]
-      ];
+      var subjects = (p.topics || []).map(function (t) { return t.split(" › ").pop(); }).join(", ");
+      var rows;
+      if (mentor) {
+        var L = p.location || {};
+        var where = [];
+        if (L.house) where.push("At my house (" + [L.city, L.zip].filter(Boolean).join(" ") + ")");
+        if (L.travel) where.push("Can travel up to " + L.miles + " miles");
+        if (L.online) where.push("Online");
+        rows = [["Subjects", subjects], ["Ad title", p.title], ["About my lessons", p.lessons], ["About me", p.about], ["Lesson location", where.join("\n")]];
+      } else {
+        rows = [["Interested in", subjects]];
+      }
       var dl = document.getElementById("summary");
       rows.forEach(function (r) {
         var dt = document.createElement("dt"); dt.textContent = r[0];
