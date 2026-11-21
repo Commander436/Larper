@@ -42,7 +42,18 @@
       </section>
 
       <section class="card" aria-live="polite">
-        <div id="pane-role">
+        <div id="pane-choice">
+          <span class="eyebrow">A community for learning</span>
+          <h2>Welcome to Tech for Women</h2>
+          <p class="sub">Log in to your account or sign up to join the community.</p>
+          <div class="auth-actions">
+            <button class="btn btn-primary btn-block" id="show-login" type="button">Log in</button>
+            <button class="btn btn-ghost btn-block" id="show-signup" type="button">Sign up</button>
+          </div>
+        </div>
+
+        <div id="pane-login" class="hidden">
+          <button class="back-link back-to-choice" type="button">← Back</button>
           <span class="eyebrow">A community for learning</span>
           <h2>Welcome back</h2>
           <p class="sub">Sign in with the username and password you created for your account.</p>
@@ -56,7 +67,13 @@
           </form>
           <button class="btn btn-ghost btn-block" id="secure-sign-in" type="button" disabled>Secure sign-in unavailable</button>
           <p class="auth-notice" id="auth-notice" role="status" aria-live="polite">Checking secure sign-in availability…</p>
-          <p class="sub">New here? Choose a role to create an account:</p>
+        </div>
+
+        <div id="pane-role" class="hidden">
+          <button class="back-link back-to-choice" type="button">← Back</button>
+          <span class="eyebrow">A community for learning</span>
+          <h2 id="role-title">Create your account</h2>
+          <p class="sub" id="role-sub">Choose a role to get started.</p>
           <div class="role-cards">
             <button class="role" type="button" data-role="mentor">
               <span class="ico" aria-hidden="true">👩‍🏫</span>
@@ -70,7 +87,7 @@
         </div>
 
         <div id="pane-form" class="hidden">
-          <button class="back-link" type="button" id="back-to-role">← Back</button>
+          <button class="back-link" type="button" id="back-to-role">← Back to role</button>
           <h2>Create your account</h2>
           <p class="sub" id="form-sub"></p>
           <form id="auth-form" class="stack" novalidate>

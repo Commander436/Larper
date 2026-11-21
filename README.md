@@ -1,44 +1,115 @@
-# Tech for Women
+# Larper
 
-By Darris Koikkara and Nithis Nagappan
+**Larper — Tech for Women mentor and community platform**
 
-Website for **Tech for Women**, a nonprofit bringing tech education to underserved students across the Valley through free workshops and classes. The site makes it easier for mentors and mentees to connect online (calls, chat) or in person, with community posts and private calendar email reminders.
+**Team:** Darris Koikkara and Nithis Nagappan
+**Nonprofit partner:** Tech for Women
 
-## Run it
+## The problem
 
-No build step. Open `index.html` in a browser, or run `python3 -m http.server` and visit http://localhost:8000.
-Run the focused messaging tests with `node --test js/messaging.test.js`, focused streak tests with `node --test js/streak.test.js`, and the configured worker/streak suite with `npm test`.
+Underserved students in the Phoenix Valley often lack easy access to technology education and a clear way to find people who can guide them. Tech for Women provides free workshops and classes, but mentors and mentees need a simple place to discover interests, learn from one another, and keep track of community learning and appointments.
 
-## Notes
+Larper is a web experience that brings mentor and mentee onboarding, community discussion, private calendars, and learning streaks into one project. The goal is to make Tech for Women's programs easier to navigate and to support meaningful mentor-mentee connections.
 
-- **Profile and onboarding details are a local preview, not account storage.** The app never collects or stores passwords. Optional secure sign-in uses Cloudflare Access; its edge-managed session is verified by the Worker and no Access token is stored in browser storage. The role and profile preview are still stored in `sessionStorage` and clear when the browser tab closes.
-- **Messaging is a local prototype, not private communication.** Completed profiles are listed to the other role in the same browser, and conversations are saved in `localStorage` so another preview in that browser can reply. It does not work across devices or browsers, and anyone using this browser can read or change the preview messages. A real service needs authenticated accounts, server-side role/participant authorization, and secure message storage.
-- Learner learning streaks are stored in browser `localStorage` by profile ID. A learner's first visit starts a one-day streak, same-day visits count once, and returning after a missed local calendar day starts a new streak. This local preview data is not synced or secure account storage.
-- The previous prototype stored profiles persistently in `localStorage`; opening `index.html` removes only its old `tfw_session` and `tfw_profile` keys. Cloudflare Access is disabled in the checked-in Wrangler config, so secure sign-in remains unavailable until deployment infrastructure is configured.
-- Colors are provisional. All of them are tokens at the top of `css/styles.css`, so matching the nonprofit's brand colors is a one-block change.
-- Profile photos are resized to a 512px square in the browser before saving to the current tab's session storage.
-- Word minimums, topic limits, photo rules, etc. are in `CONFIG` at the top of `js/onboarding.js`. Topics live in `js/topics.js`.
-- Text fields reject links, emails and phone numbers, since contact details shouldn't appear in public text.
+## How it works
 
-## Community feed and private calendar
+Visitors begin at `index.html`, choose whether they are a mentor or mentee, and complete a guided profile flow. The onboarding experience collects a role, interests or teaching topics, a short profile, lesson format, and a profile photo.
 
-`feed.html` provides a searchable community feed. The **For You** view shows mentor advice publications to both mentors and mentees; **Following** retains the broader post view, including mentee questions. The feed also supports comments and replies, and up/down voting. `profile.html` also contains a private calendar for appointments and events. Calendar reads and changes are always scoped to the identity verified by Cloudflare Access; client-supplied profile IDs are not used. Reminders are scheduled for 9 a.m. in the event's time zone on the day before and the day of the event.
+The mentor and mentee profiles feed into the app's profile experience, community feed, calendar, and local messaging preview:
 
-The feed and calendar use a Cloudflare Worker and D1. Neither is shared or writable until Cloudflare resources and identity are configured:
+- Mentors describe what they teach and how they offer lessons.
+- Mentees describe what they want to learn.
+- The community feed supports mentor advice, mentee questions, comments, replies, search, and votes.
+- Profile pages include a private calendar for appointments and events, with email reminders scheduled for 9 a.m. in the event's time zone on the day before and day of an event once deployment is configured.
+- The current browser-based data flows demonstrate the intended experience even before every integration is deployed.
 
-1. The production `FEED_DB` binding uses the D1 database `yo` and its configured production ID. Apply both migrations to it with `npx wrangler d1 migrations apply yo --remote`.
-2. Protect profile/feed pages and private Worker API routes with Cloudflare Access. Keep `index.html`, `/api/auth/status`, `/api/auth/login`, and `/api/auth/logout` reachable without an existing Access session so the sign-in flow can start and finish. Require Access on `/api/auth/session` and the private APIs. Configure the Worker `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` bindings and set `FEED_AUTH_MODE` to `cloudflare-access`. The sign-in page redirects through the configured Access application; the Worker verifies its signed JWT for `/api/auth/session` and private APIs. The Access JWT must include each user's stable `sub`; calendar writes also require a valid `email` claim. Sign-out clears local preview state and redirects through Cloudflare Access logout.
-3. Configure a Resend account with a verified sending domain. Set the Worker secret with `npx wrangler secret put RESEND_API_KEY`, and set the non-secret `REMINDER_FROM_EMAIL` Worker variable to a sender address on that verified domain. Do not put credentials in `wrangler.toml` or source control.
-4. The Worker declares an hourly Cron Trigger. Deploy the Worker and assets to enable it; reminders will not be sent until D1, Access, the Resend API key, and sender address are configured.
+The server-side implementation uses a Cloudflare Worker and D1 database for account sessions, posts, comments, votes, calendar events, reminder delivery records, and Cloudflare Access identity verification.
 
-The current secure boundary rejects protected API requests unless `FEED_AUTH_MODE=cloudflare-access` and a valid RS256 `CF-Access-Jwt-Assertion` is verified against the configured team domain and audience. Calendar data is never returned in public feed responses, and the local profile role and name are never accepted as authenticated identity. Reminder delivery is recorded by event and reminder type, and Resend receives a stable idempotency key so scheduled retries do not duplicate successful sends.
+## Tech stack
 
-Preview deployments intentionally have no D1 binding until a separate Preview database ID is configured; the production database is never exposed to Preview. Feed and comment reads return HTTP 503 while Preview has no database, and calendar writes remain disabled unless Preview authentication is configured.
+- **Frontend:** HTML5, CSS3, and browser-native JavaScript
+- **Module format:** ES modules
+- **Server/API:** Cloudflare Workers
+- **Database:** Cloudflare D1 with SQLite migrations
+- **Authentication:** PBKDF2 password hashing and secure HTTP-only sessions, plus Cloudflare Access JWT verification
+- **Email reminders:** Resend
+- **Testing:** Node.js built-in `node:test`
+- **Deployment:** Cloudflare Workers assets and Cron Triggers
 
-The existing profile is a local preview, not a real account. Calendar data is not saved in that browser preview; it appears only when the page is served behind configured Access and the Worker/D1 are available. No email will be sent until the deployment prerequisites above are complete.
+## Run locally
 
-Run feed and calendar tests with:
+### Static preview
+
+No package build is required. From the repository root:
+
+```sh
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000`.
+
+The landing page is `index.html`. Direct links to `onboarding.html`, `profile.html`, and `feed.html` are also available.
+
+### Tests
 
 ```sh
 npm test
 ```
+
+The test suite is defined in `package.json` and covers the Worker feed and calendar routes, authentication utilities, feed ranking, messaging, and learning streak behavior.
+
+### Cloudflare preview
+
+The checked-in Wrangler configuration disables secure authentication and does not enable D1 for preview deployments. To work with the full server-side app:
+
+1. Install [Node.js](https://nodejs.org/) and [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/).
+2. Provision a Cloudflare D1 database and update `wrangler.toml`.
+3. Apply the migrations:
+
+   ```sh
+   npx wrangler d1 migrations apply yo --remote
+   ```
+
+4. Configure Cloudflare Access variables for `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, and `FEED_AUTH_MODE=cloudflare-access`.
+5. For calendar email reminders, configure `RESEND_API_KEY` and `REMINDER_FROM_EMAIL`, and deploy the hourly Cron Trigger.
+
+Details and security requirements are documented in the sections below.
+
+## What is finished
+
+- Responsive landing page and Arizona-inspired Tech for Women visual design
+- Mentor and mentee onboarding flows with topic limits and profile validation
+- Profile home with mentor ad or mentee learning-plan content
+- Username/password account creation and session handling
+- Cloudflare Access verification for deployed identities
+- Community feed with advice and question posts, search, comments, replies, and voting
+- Private calendar create, read, update, and delete routes
+- D1 migrations for users, feed content, calendar events, reminders, credentials, and sessions
+- Time-zone-aware reminder scheduling and idempotent delivery records
+- Node test coverage for the implemented utilities and server routes
+
+## What is mocked or not connected yet
+
+- **Profile storage:** profile details remain in `sessionStorage` and are preview data, not a synchronized account profile.
+- **Mentor-mentee matching:** matching and real mentor discovery are represented in the interface but are not implemented as a server-side matching system.
+- **Messaging:** conversations are a browser-only prototype using `localStorage`. They do not work across devices or provide real private communication.
+- **Learning streaks:** streaks are calculated and stored in browser `localStorage`; they are not linked to a secure account or synchronized.
+- **Live feed and calendar:** the checked-in deployment mode has authentication and D1 disabled, so server-backed feed/calendar operations require production configuration.
+- **Email reminders:** the Worker Cron Trigger, D1 bindings, Resend credentials, and Cloudflare Access must be deployed and configured before reminders send.
+
+These limitations are deliberate boundaries for a prototype: the UI and core logic can be reviewed locally, while real identity, access control, and shared storage require deployment setup.
+
+## What comes next
+
+1. Deploy a configured Cloudflare Worker, D1 database, and Cloudflare Access policy.
+2. Replace local profile and messaging state with authenticated, server-side accounts and conversations.
+3. Implement real mentor-mentee matching and searchable mentor profiles.
+4. Expand calendar notifications and add real in-app or email meeting invitations.
+5. Replace provisional colors with final nonprofit branding and complete accessibility and mobile testing.
+6. Add production monitoring, moderation, privacy controls, and data retention policies.
+
+## Links
+
+- **Repository:** [Commander436/Larper](https://github.com/Commander436/Larper)
+- **Demo video:** _Not discoverable in the repository or project metadata yet._
+- **Cloudflare app:** _Not discoverable in the repository or project metadata yet._

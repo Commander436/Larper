@@ -4,6 +4,8 @@
  */
 (function () {
   const $ = (id) => document.getElementById(id);
+  const paneChoice = $("pane-choice");
+  const paneLogin = $("pane-login");
   const paneRole = $("pane-role");
   const paneForm = $("pane-form");
   const loginForm = $("login-form");
@@ -28,9 +30,20 @@
   const api = (path) => `${API}${path}`;
 
   function show(pane) {
+    paneChoice.classList.toggle("hidden", pane !== "choice");
+    paneLogin.classList.toggle("hidden", pane !== "login");
     paneRole.classList.toggle("hidden", pane !== "role");
     paneForm.classList.toggle("hidden", pane !== "form");
+    loginError.textContent = "";
     errorEl.textContent = "";
+  }
+
+  function showRoleSelection(isAuthenticated = false, identityName = "") {
+    $("role-title").textContent = isAuthenticated ? "Finish setting up your profile" : "Create your account";
+    $("role-sub").textContent = isAuthenticated
+      ? `Signed in securely as ${identityName}. Choose a role to continue.`
+      : "Choose a role to get started.";
+    show("role");
   }
 
   function localProfileKey(userId) {
@@ -57,7 +70,7 @@
     }
     if (!["mentor", "mentee"].includes(activeRole)) {
       providerIdentity = identity;
-      authNotice.textContent = `Signed in securely as ${identity.name}. Choose a role to set up your profile.`;
+      showRoleSelection(true, identity.name);
       secureSignIn.disabled = true;
       secureSignIn.textContent = "Signed in with Cloudflare Access";
       return;
@@ -257,7 +270,7 @@
             startAuthenticatedSession(providerIdentity, "cloudflare-access", cachedProfile.role);
             return;
           }
-          authNotice.textContent = `Signed in securely as ${providerIdentity.name}. Choose your profile role to continue.`;
+          showRoleSelection(true, providerIdentity.name);
           secureSignIn.disabled = true;
           secureSignIn.textContent = "Signed in with Cloudflare Access";
         }
@@ -270,6 +283,11 @@
     }
   }
 
+  $("show-login").addEventListener("click", () => {
+    show("login");
+    loginUsername.focus();
+  });
+  $("show-signup").addEventListener("click", () => showRoleSelection());
   loginForm.addEventListener("submit", signInWithPassword);
   form.addEventListener("submit", signUp);
   $("continue-preview").addEventListener("click", () => startLocalPreview(displayName.value.trim()));
@@ -280,6 +298,10 @@
   document.querySelectorAll(".role").forEach((button) => {
     button.addEventListener("click", () => {
       selectedRole = button.dataset.role;
+      if (providerIdentity) {
+        startAuthenticatedSession(providerIdentity, "cloudflare-access", selectedRole);
+        return;
+      }
       $("form-sub").textContent = selectedRole === "mentor"
         ? "Create a mentor account or continue with a local preview."
         : "Create a learner account or continue with a local preview.";
@@ -288,6 +310,9 @@
     });
   });
 
+  document.querySelectorAll(".back-to-choice").forEach((button) => {
+    button.addEventListener("click", () => show("choice"));
+  });
   $("back-to-role").addEventListener("click", () => show("role"));
   checkSecureSignIn();
 })();
