@@ -68,9 +68,12 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 
 .card { background: #fff; border-radius: var(--radius-lg); padding: 44px 48px; box-shadow: 0 24px 70px rgba(34, 53, 89, .18); }
 .card h2 { text-align: center; font-family: var(--font); font-size: 1.8rem; margin: 0 0 8px; font-weight: 750; letter-spacing: -.8px; color: var(--ink); }
+.card > #pane-choice > .eyebrow,
+.card > #pane-login > .eyebrow,
 .card > #pane-role > .eyebrow { text-align: center; margin: 0 0 10px; letter-spacing: 1.8px; }
 .card .sub { text-align: center; color: var(--muted); margin: 0 0 28px; }
 .card .stack { display: grid; gap: 14px; }
+.auth-actions { display: grid; gap: 14px; margin-top: 24px; }
 .switch { text-align: center; color: var(--muted); margin: 28px 0 0; }
 .switch button { color: var(--primary); font-weight: 700; background: none; border: 0; font-size: 1rem; padding: 0; }
 .fineprint { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 16px; }
