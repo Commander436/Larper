@@ -2,17 +2,7 @@
 
 **Project name:** Larper
 
-**Nonprofit:** Tech for Women
-
-**Team members:** Darris Koikkara and Nithis Nagappan
-
-**Live app:** [larper.darris-dk.workers.dev](https://larper.darris-dk.workers.dev/)
-
-## The problem
-
-Women and students in underserved communities across the Phoenix Valley can have limited access to free technology education and mentorship. Tech for Women needs an accessible place for learners and mentors to find each other, share advice, and coordinate learning.
-
-## Tech stack
+Website for **Tech for Women**, a nonprofit bringing tech education to underserved students across the Valley through free workshops and classes. The site makes it easier for mentors and mentees to connect online (calls, chat) or in person, with community posts and private calendar email reminders.
 
 - Frontend: HTML, CSS, and vanilla JavaScript
 - Backend: Cloudflare Workers and Cloudflare D1
