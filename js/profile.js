@@ -19,6 +19,7 @@
 
   const $ = (id) => document.getElementById(id);
   const mentor = profile.role === "mentor";
+  if (typeof profile.id !== "string" || !profile.id) profile.id = window.TfwMessaging.createProfileId();
   $("role-badge").textContent = mentor ? "Mentor" : "Learner";
   $("profile-name").textContent = profile.name || session.displayName || "Your profile";
   $("profile-subtitle").textContent = mentor
@@ -46,6 +47,7 @@
     empty.textContent = "No topics added yet";
     topicTags.append(empty);
   }
+  window.TfwMessaging.init(profile);
 
   const adCard = $("ad-card");
   if (mentor) {
