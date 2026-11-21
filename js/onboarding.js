@@ -90,8 +90,8 @@
   }
 
   const ICONS = {
-    smile: '<svg viewBox="0 0 24 24" fill="none" stroke="#5b3fd1" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.5" r=".6" fill="#5b3fd1"/><circle cx="15" cy="9.5" r=".6" fill="#5b3fd1"/></svg>',
-    check: '<svg viewBox="0 0 16 16" fill="none" stroke="#5b3fd1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+    smile: '<svg viewBox="0 0 24 24" fill="none" stroke="#dd5f17" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.5" r=".6" fill="#dd5f17"/><circle cx="15" cy="9.5" r=".6" fill="#dd5f17"/></svg>',
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="#dd5f17" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
     chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   };
 
