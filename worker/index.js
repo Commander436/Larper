@@ -1,4 +1,5 @@
 import { clamp, parseTopics, rankPosts, validatePost } from "./feed-utils.js";
+import { eventLocalDate, reminderTypeForEvent, validateCalendarEvent } from "./calendar-utils.js";
 
 const encoder = new TextEncoder();
 
@@ -80,6 +81,7 @@ async function verifyCloudflareAccess(request, env) {
     return {
       id: `access:${payload.sub}`,
       name: String(payload.name || payload.email || "Community member").slice(0, 60),
+      email: typeof payload.email === "string" && payload.email.length <= 254 ? payload.email : null,
     };
   } catch (_) {
     return null;
@@ -101,9 +103,150 @@ async function authenticate(request, env) {
   return { identity };
 }
 
-async function ensureUser(db, identity) {
+async function ensureUser(db, identity, saveEmail = false) {
+  if (saveEmail) {
+    const email = identity.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity.email) ? identity.email : null;
+    await db.prepare("INSERT INTO users (id, display_name, email) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET display_name = excluded.display_name, email = COALESCE(excluded.email, users.email)")
+      .bind(identity.id, identity.name, email).run();
+    return;
+  }
   await db.prepare("INSERT INTO users (id, display_name) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET display_name = excluded.display_name")
     .bind(identity.id, identity.name).run();
+}
+
+function parseJsonBody(request) {
+  return request.json().catch(() => null);
+}
+
+async function calendarEvents(request, env, identity) {
+  if (request.method === "GET") {
+    const result = await env.FEED_DB.prepare(
+      "SELECT id, title, description, starts_at, timezone, created_at, updated_at FROM calendar_events WHERE user_id = ? ORDER BY starts_at ASC"
+    ).bind(identity.id).all();
+    return json({ events: result.results || [] });
+  }
+
+  const body = await parseJsonBody(request);
+  if (!body) return badRequest("A JSON request body is required.");
+  const validationError = validateCalendarEvent(body);
+  if (validationError) return badRequest(validationError);
+  if (!identity.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity.email)) {
+    return json({ error: "Your sign-in provider must supply a valid email address for reminders." }, 422);
+  }
+
+  await ensureUser(env.FEED_DB, identity, true);
+  const id = randomId("event");
+  const values = [
+    body.title.trim(),
+    body.description.trim(),
+    new Date(body.starts_at).toISOString(),
+    body.timezone,
+  ];
+  await env.FEED_DB.prepare(
+    "INSERT INTO calendar_events (id, user_id, title, description, starts_at, event_local_date, timezone) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(id, identity.id, ...values.slice(0, 2), values[2], eventLocalDate(values[2], values[3]), values[3]).run();
+  return json({ id }, 201);
+}
+
+async function updateCalendarEvent(request, env, identity, eventId, method) {
+  const owned = await env.FEED_DB.prepare(
+    "SELECT id FROM calendar_events WHERE id = ? AND user_id = ?"
+  ).bind(eventId, identity.id).first();
+  if (!owned) return json({ error: "Event not found" }, 404);
+  if (method === "DELETE") {
+    await env.FEED_DB.prepare("DELETE FROM calendar_events WHERE id = ? AND user_id = ?")
+      .bind(eventId, identity.id).run();
+    return json({ ok: true });
+  }
+
+  const body = await parseJsonBody(request);
+  if (!body) return badRequest("A JSON request body is required.");
+  const validationError = validateCalendarEvent(body);
+  if (validationError) return badRequest(validationError);
+  await ensureUser(env.FEED_DB, identity, true);
+  await env.FEED_DB.prepare(
+    "UPDATE calendar_events SET title = ?, description = ?, starts_at = ?, event_local_date = ?, timezone = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ? AND user_id = ?"
+  ).bind(
+    body.title.trim(),
+    body.description.trim(),
+    new Date(body.starts_at).toISOString(),
+    eventLocalDate(body.starts_at, body.timezone),
+    body.timezone,
+    eventId,
+    identity.id,
+  ).run();
+  return json({ ok: true });
+}
+
+async function sendReminder(env, event, reminderType) {
+  const deliveryId = `${event.id}:${reminderType}`;
+  const claim = await env.FEED_DB.prepare(
+    "INSERT OR IGNORE INTO calendar_reminder_deliveries (event_id, reminder_type, status, attempted_at) VALUES (?, ?, 'sending', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+  ).bind(event.id, reminderType).run();
+  if (!claim.meta?.changes) return false;
+
+  try {
+    const eventTime = new Intl.DateTimeFormat("en-US", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: event.timezone,
+    }).format(new Date(event.starts_at));
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "content-type": "application/json",
+        "Idempotency-Key": `larper-calendar-${deliveryId}`,
+      },
+      body: JSON.stringify({
+        from: env.REMINDER_FROM_EMAIL,
+        to: [event.email],
+        subject: reminderType === "day_before" ? `Tomorrow: ${event.title}` : `Today: ${event.title}`,
+        text: reminderType === "day_before"
+          ? `Reminder: "${event.title}" is tomorrow, ${eventTime} (${event.timezone}).`
+          : `Reminder: "${event.title}" is today, ${eventTime} (${event.timezone}).`,
+      }),
+    });
+    if (!response.ok) {
+      await env.FEED_DB.prepare(
+        "DELETE FROM calendar_reminder_deliveries WHERE event_id = ? AND reminder_type = ? AND status = 'sending'"
+      ).bind(event.id, reminderType).run();
+      console.error("Calendar reminder provider rejected a message", { eventId: event.id, status: response.status });
+      return false;
+    }
+    await env.FEED_DB.prepare(
+      "UPDATE calendar_reminder_deliveries SET status = 'sent', sent_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE event_id = ? AND reminder_type = ?"
+    ).bind(event.id, reminderType).run();
+    return true;
+  } catch (error) {
+    await env.FEED_DB.prepare(
+      "DELETE FROM calendar_reminder_deliveries WHERE event_id = ? AND reminder_type = ? AND status = 'sending'"
+    ).bind(event.id, reminderType).run();
+    console.error("Calendar reminder delivery failed", { eventId: event.id, message: error.message });
+    return false;
+  }
+}
+
+async function dispatchCalendarReminders(env, scheduledTime) {
+  if (!env.FEED_DB || !env.RESEND_API_KEY || !env.REMINDER_FROM_EMAIL) {
+    console.warn("Calendar reminders are disabled until D1 and Resend bindings are configured.");
+    return;
+  }
+  const now = new Date(scheduledTime || Date.now());
+  const rows = await env.FEED_DB.prepare(`
+    SELECT e.id, e.title, e.starts_at, e.event_local_date, e.timezone, u.email
+    FROM calendar_events e
+    JOIN users u ON u.id = e.user_id
+    WHERE e.starts_at > ? AND e.starts_at <= ?
+      AND u.email IS NOT NULL AND u.email != ''
+    ORDER BY e.starts_at ASC
+    LIMIT 500
+  `).bind(now.toISOString(), new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString()).all();
+
+  for (const event of rows.results || []) {
+    const reminderType = reminderTypeForEvent(event, now);
+    if (reminderType) await sendReminder(env, event, reminderType);
+  }
 }
 
 async function getFeed(env, url) {
@@ -145,6 +288,17 @@ export default {
           ? ""
           : "Shared writes require Cloudflare Access configuration. Local previews remain read-only.",
       });
+    }
+    const calendarEventMatch = url.pathname.match(/^\/api\/calendar\/events\/([^/]+)$/);
+    if ((url.pathname === "/api/calendar/events" && (request.method === "GET" || request.method === "POST")) ||
+        (calendarEventMatch && ["PATCH", "DELETE"].includes(request.method))) {
+      const auth = await authenticate(request, env);
+      if (auth.response) return auth.response;
+      if (!env.FEED_DB) return json({ error: "Calendar storage is not configured." }, 503);
+      if (calendarEventMatch) {
+        return updateCalendarEvent(request, env, auth.identity, decodeURIComponent(calendarEventMatch[1]), request.method);
+      }
+      return calendarEvents(request, env, auth.identity);
     }
     if (url.pathname === "/api/feed" && request.method === "GET") {
       return getFeed(env, url);
@@ -217,5 +371,8 @@ export default {
 
     if (env.ASSETS) return env.ASSETS.fetch(request);
     return json({ error: "Not found" }, 404);
+  },
+  async scheduled(controller, env) {
+    await dispatchCalendarReminders(env, controller.scheduledTime);
   },
 };
