@@ -156,14 +156,13 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .profile-page {
   background:
     radial-gradient(circle at 92% 14%, rgba(244,184,106,.20) 0 70px, transparent 71px),
-    linear-gradient(165deg, transparent 0 68%, rgba(169,183,155,.20) 68% 78%, transparent 79%),
-    linear-gradient(25deg, transparent 0 74%, rgba(214,154,103,.18) 74% 82%, transparent 83%),
     #f8f3ef;
   background-attachment: fixed;
 }
 .profile-page::before {
   content: "";
   position: fixed;
+  z-index: 0;
   right: 0;
   bottom: 0;
   width: 260px;
@@ -176,11 +175,11 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
     linear-gradient(18deg, transparent 0 55%, #99ad98 56% 70%, transparent 71%);
   clip-path: polygon(0 50%, 18% 34%, 33% 50%, 53% 18%, 72% 48%, 88% 32%, 100% 48%, 100% 100%, 0 100%);
 }
-.profile-page .profile-wrap { position: relative; z-index: 1; }
+.profile-page .profile-wrap { position: relative; z-index: 1; isolation: isolate; }
 .profile-desert-art,
 .feed-desert-art {
   position: fixed;
-  z-index: 0;
+  z-index: -1;
   right: 18px;
   bottom: 12px;
   width: 260px;
@@ -271,8 +270,6 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .feed-page {
   background:
     radial-gradient(circle at 88% 8%, rgba(244,184,106,.17) 0 55px, transparent 56px),
-    linear-gradient(155deg, transparent 0 72%, rgba(169,183,155,.16) 72% 82%, transparent 83%),
-    linear-gradient(20deg, transparent 0 78%, rgba(214,154,103,.14) 78% 86%, transparent 87%),
     var(--bg);
   background-attachment: fixed;
 }
@@ -285,7 +282,7 @@ textarea.field { resize: vertical; min-height: 200px; line-height: 1.55; }
 .feed-search:focus-within { border-color: var(--primary); background: #fff; }
 .feed-search input { min-width: 0; border: 0; background: transparent; outline: none; padding: 10px 14px; color: var(--text); font-family: inherit; }
 .feed-search button { border: 0; border-radius: 999px; background: var(--primary); color: #fff; padding: 9px 16px; font-weight: 700; }
-.feed-wrap { max-width: 1180px; margin: 30px auto 70px; padding: 0 28px; display: grid; grid-template-columns: 220px minmax(0, 760px); justify-content: center; gap: 24px; }
+.feed-wrap { position: relative; z-index: 1; isolation: isolate; max-width: 1180px; margin: 30px auto 70px; padding: 0 28px; display: grid; grid-template-columns: 220px minmax(0, 760px); justify-content: center; gap: 24px; }
 .feed-sidebar { align-self: start; }
 .feed-profile-card, .feed-interests { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
 .feed-profile-card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
