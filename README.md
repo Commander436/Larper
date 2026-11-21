@@ -1,13 +1,13 @@
-**Tech for Women mentor and community platform**
+**Tech for Women mentor and mentee platform**
 
 **Team:** Darris Koikkara and Nithis Nagappan
 **Nonprofit partner:** Tech for Women
 
 ## The problem
 
-Underserved students in the Phoenix Valley often lack easy access to technology education and a clear way to find people who can guide them. Tech for Women provides free workshops and classes, but mentors and mentees need a simple place to discover interests, learn from one another, and keep track of community learning and appointments.
+Underserved students worldwide often lack easy access to technology education and a clear way to find people who can guide them. Tech for Women provides free workshops and classes, but mentors and mentees need a simple place to discover interests, learn from one another, and keep track of community learning and appointments. It is also clear that mentees often abandon/ghost their learning paths and mentors - a problem which this system will help prevent
 
-Larper is a web experience that brings mentor and mentee onboarding, community discussion, private calendars, and learning streaks into one project. The goal is to make Tech for Women's programs easier to navigate and to support meaningful mentor-mentee connections.
+This is web experience that brings mentor and mentee onboarding, community discussion, calendars/scheduling, and learning streaks into one project. The goal is to make Tech for Women's programs easier to navigate and to support meaningful mentor-mentee connections.
 
 ## How it works
 
@@ -75,7 +75,7 @@ Details and security requirements are documented in the sections below.
 
 ## What is finished
 
-- Responsive landing page and Arizona-inspired Tech for Women visual design
+- Responsive landing page and visual design
 - Mentor and mentee onboarding flows with topic limits and profile validation
 - Profile home with mentor ad or mentee learning-plan content
 - Username/password account creation and session handling
@@ -84,7 +84,6 @@ Details and security requirements are documented in the sections below.
 - Private calendar create, read, update, and delete routes
 - D1 migrations for users, feed content, calendar events, reminders, credentials, and sessions
 - Time-zone-aware reminder scheduling and idempotent delivery records
-- Node test coverage for the implemented utilities and server routes
 
 ## What is mocked or not connected yet
 
@@ -98,16 +97,14 @@ Details and security requirements are documented in the sections below.
 These limitations are deliberate boundaries for a prototype: the UI and core logic can be reviewed locally, while real identity, access control, and shared storage require deployment setup.
 
 ## What comes next
-
-1. Deploy a configured Cloudflare Worker, D1 database, and Cloudflare Access policy.
-2. Replace local profile and messaging state with authenticated, server-side accounts and conversations.
-3. Implement real mentor-mentee matching and searchable mentor profiles.
-4. Expand calendar notifications and add real in-app or email meeting invitations.
-5. Replace provisional colors with final nonprofit branding and complete accessibility and mobile testing.
-6. Add production monitoring, moderation, privacy controls, and data retention policies.
+1. Replace local profile and messaging state with authenticated, server-side accounts and conversations.
+2. Implement real mentor-mentee matching and searchable mentor profiles.
+3. Expand calendar notifications and add real in-app or email meeting invitations.
+4. Add email reminders and text messages to help improve retention. 
+5. Add production monitoring, moderation, privacy controls, and data retention policies.
 
 ## Links
 
 - **Repository:** [Commander436/Larper](https://github.com/Commander436/Larper)
-- **Demo video:** _Not discoverable in the repository or project metadata yet._
-- **Cloudflare app:** _Not discoverable in the repository or project metadata yet._
+- **Demo video:** https://www.canva.com/design/DAHblFVOvT4/iA36ZAVQZ87P5cAfeBTqow/edit?ui=e30
+- **Cloudflare app:** https://larper.darris-dk.workers.dev/
